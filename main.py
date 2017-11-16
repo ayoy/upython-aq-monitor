@@ -23,14 +23,14 @@ while not rtc.synced():
 time.timezone(3600)
 
 # logging to file depends on time being set so import it here
-import console
+#import console
 
 set_pin = Pin(Pin.exp_board.G12, mode=Pin.OUT)
 set_pin(True)
-en = Pin(Pin.exp_board.G17, mode=Pin.OUT, pull=Pin.PULL_DOWN) # MOSFET gate
+en = Pin(Pin.exp_board.G22, mode=Pin.OUT, pull=Pin.PULL_DOWN) # MOSFET gate
 rst = Pin(Pin.exp_board.G13, mode=Pin.OUT)
 
-uart = UART(1, baudrate=9600) # init with given baudrate
+uart = UART(1, baudrate=9600, pins=(Pin.exp_board.G14, Pin.exp_board.G15)) # init with given baudrate
 uart.deinit()
 
 
@@ -40,7 +40,7 @@ while True:
     chrono.start()
     en.value(1)
     rst.value(1)
-    uart.init()
+    uart.init(pins=(Pin.exp_board.G14, Pin.exp_board.G15))
     printt('waiting 10s to take measurement')
     machine.idle()
     time.sleep_ms(10000)
@@ -88,6 +88,7 @@ while True:
                     chrono.reset()
                     machine.idle()
                     time.sleep(600 - chrono.read())
+                    # time.sleep(5)
                 except OSError as e:
                     printt('network error: {}'.format(e.errno))
                     pass
