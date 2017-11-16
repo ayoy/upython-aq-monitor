@@ -7,33 +7,43 @@ while not wlan.isconnected():
     machine.idle()
 
 from machine import Pin
+from machine import Timer
 from helpers import *
 import urequests
 import pycom
 import time
 import utime
-import console
 pycom.heartbeat(False)
 
 printt('WLAN connection succeeded!')
 rtc = machine.RTC()
 rtc.ntp_sync("pool.ntp.org")
+while not rtc.synced():
+    machine.idle()
 time.timezone(3600)
 
-en = Pin(Pin.exp_board.G12, mode=Pin.OUT)
+# logging to file depends on time being set so import it here
+import console
+
+set_pin = Pin(Pin.exp_board.G12, mode=Pin.OUT)
+set_pin(True)
+en = Pin(Pin.exp_board.G17, mode=Pin.OUT, pull=Pin.PULL_DOWN) # MOSFET gate
 rst = Pin(Pin.exp_board.G13, mode=Pin.OUT)
 
 uart = UART(1, baudrate=9600) # init with given baudrate
 uart.deinit()
 
+
+chrono = Timer.Chrono()
+
 while True:
+    chrono.start()
     en.value(1)
     rst.value(1)
     uart.init()
     printt('waiting 10s to take measurement')
     machine.idle()
     time.sleep_ms(10000)
-    # machine.idle()
     u = uart.any()
     printt('waiting for data {}'.format(str(u)))
     while u < 32:
@@ -74,9 +84,10 @@ while True:
                     en.value(0)
                     uart.deinit()
                     printt('sleeping for 10 mins {}'.format(str(uart.any())))
+                    chrono.stop()
+                    chrono.reset()
                     machine.idle()
-                    time.sleep(590)
-                    # print('waking up {}'.format(str(uart.any())))
+                    time.sleep(600 - chrono.read())
                 except OSError as e:
-                    printt('network error: {} {}'.format(e.errno, e.strerror))
+                    printt('network error: {}'.format(e.errno))
                     pass

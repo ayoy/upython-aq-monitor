@@ -6,8 +6,9 @@ from _thread import start_new_thread
 def log_console():
     console = StringIO()
     dupterm(console)
+    logfile = '/flash/console-{}.log'.format(time.time())
     while True:
-        logH = open('/flash/console.log', 'w+')
+        logH = open(logfile, 'w+')
         logH.write(console.getvalue())
         logH.close()
         time.sleep(1)
