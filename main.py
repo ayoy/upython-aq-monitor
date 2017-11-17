@@ -13,6 +13,7 @@ import urequests
 import pycom
 import time
 import utime
+import adc
 pycom.heartbeat(False)
 
 printt('WLAN connection succeeded!')
@@ -67,13 +68,14 @@ while frame_read == False:
         if (cpm25, cpm10, pm25, pm10) == (-1, -1, -1, -1):
             printt('error reading frame, skipping {}'.format(uart.any()))
         else:
+            voltage = adc.ADCloopMeanStdDev()
             frame_read = True
             t = utime.localtime(utime.time())
             timestamp = '{}-{:02d}-{:02d} {:02d}:{:02d}:{:02d}'.format(t[0], t[1], t[2], t[3], t[4], t[5])
             printt('{0} cPM25: {1}, cPM10: {2}, PM25: {3}, PM10: {4}'.format(timestamp, cpm25, cpm10, pm25, pm10))
 
             influx_url = 'http://rpi.local:8086/write?db=mydb'
-            data = 'aqi,indoor=1 pm25={},pm10={}'.format(pm25, pm10)
+            data = 'aqi,indoor=1 pm25={},pm10={},voltage={}'.format(pm25, pm10, voltage)
             try:
                 r = urequests.post(influx_url, data=data)
                 pycom.rgbled(0x000055)
