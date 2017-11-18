@@ -67,6 +67,8 @@ while len(frames) < valid_frames_count + frames_to_skip_count:
             printt('error reading frame: {}'.format(e.message))
             pass
 
+uart.deinit()
+en.value(0)
 
 cpm25 = 0
 cpm10 = 0
@@ -100,9 +102,6 @@ while not success and number_of_retries > 0:
         pycom.rgbled(0x008800)
         time.sleep_ms(20)
         pycom.rgbled(0x000000)
-
-        en.value(0)
-        uart.deinit()
 
         success = True
     except OSError as e:
