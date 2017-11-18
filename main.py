@@ -14,6 +14,7 @@ import pycom
 import time
 import utime
 import adc
+from sht1x import SHT1X
 from pmsdata import PMSData
 pycom.heartbeat(False)
 
@@ -87,11 +88,31 @@ mean_data = PMSData(cpm25/valid_frames_count, cpm10/valid_frames_count, \
                     pm25/valid_frames_count, pm10/valid_frames_count)
 
 voltage = adc.ADCloopMeanStdDev()
-printt('cPM25: {}, cPM10: {}, PM25: {}, PM10: {}' \
-        .format(mean_data.cpm25, mean_data.cpm10, mean_data.pm25, mean_data.pm10))
+
+humid = SHT1X(gnd=Pin.exp_board.G7, sck=Pin.exp_board.G8, data=Pin.exp_board.G9, vcc=Pin.exp_board.G10)
+humid.wake_up()
+temp = -1
+rel_humidity = -1
+try:
+    temp = humid.temperature()
+    rel_humidity = humid.humidity(temp)
+except SHT1X.AckException:
+    printt('ACK exception in temperature meter')
+    pass
+humid.sleep()
+
+if temp is None:
+    temp = -1
+if rel_humidity is None:
+    rel_humidity = -1
+
+printt('cPM25: {}, cPM10: {}, PM25: {}, PM10: {}, temp: {}, rh: {}' \
+        .format(mean_data.cpm25, mean_data.cpm10, mean_data.pm25, mean_data.pm10, temp, rel_humidity))
+
 
 influx_url = 'http://rpi.local:8086/write?db=mydb'
-data = 'aqi,indoor=1 pm25={},pm10={},voltage={}'.format(mean_data.pm25, mean_data.pm10, voltage)
+data = 'aqi,indoor=1 pm25={},pm10={},temperature={},humidity={},voltage={}' \
+    .format(mean_data.pm25, mean_data.pm10, temp, rel_humidity, voltage)
 
 success = False
 number_of_retries = 3
