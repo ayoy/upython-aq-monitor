@@ -25,7 +25,7 @@ while not rtc.synced():
 time.timezone(3600)
 
 # logging to file depends on time being set so import it here
-#import console
+# import console
 
 set_pin = Pin(Pin.exp_board.G12, mode=Pin.OUT)
 set_pin(True)
@@ -90,22 +90,31 @@ printt('cPM25: {}, cPM10: {}, PM25: {}, PM10: {}' \
 
 influx_url = 'http://rpi.local:8086/write?db=mydb'
 data = 'aqi,indoor=1 pm25={},pm10={},voltage={}'.format(mean_data.pm25, mean_data.pm10, voltage)
-try:
-    r = urequests.post(influx_url, data=data)
-    pycom.rgbled(0x008800)
-    time.sleep_ms(20)
-    pycom.rgbled(0x000000)
 
-    en.value(0)
-    uart.deinit()
-    printt('sleeping for 10 mins {}'.format(str(uart.any())))
-    chrono.stop()
-    elapsed_ms = int(chrono.read()*1000)
-    chrono.reset()
-    machine.deepsleep(600*1000 - elapsed_ms)
-    # time.sleep(600 - chrono.read())
-    # machine.deepsleep(5*1000)
-    # time.sleep(5)
-except OSError as e:
-    printt('network error: {}'.format(e.errno))
-    pass
+success = False
+number_of_retries = 3
+
+while not success and number_of_retries > 0:
+    try:
+        urequests.post(influx_url, data=data)
+        pycom.rgbled(0x008800)
+        time.sleep_ms(20)
+        pycom.rgbled(0x000000)
+
+        en.value(0)
+        uart.deinit()
+
+        success = True
+    except OSError as e:
+        printt('network error: {}'.format(e.errno))
+        number_of_retries -= 1
+        pass
+
+printt('sleeping for 10 mins {}'.format(str(uart.any())))
+chrono.stop()
+elapsed_ms = int(chrono.read()*1000)
+chrono.reset()
+machine.deepsleep(600*1000 - elapsed_ms)
+# time.sleep(600 - chrono.read())
+# machine.deepsleep(5*1000)
+# time.sleep(5)
