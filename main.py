@@ -88,32 +88,53 @@ for data in frames[frames_to_skip_count:]:
 mean_data = PMSData(cpm25/valid_frames_count, cpm10/valid_frames_count, \
                     pm25/valid_frames_count, pm10/valid_frames_count)
 
-voltage = adc.ADCloopMeanStdDev()
 
-humid = SHT1X(gnd=Pin.exp_board.G7, sck=Pin.exp_board.G8, data=Pin.exp_board.G9, vcc=Pin.exp_board.G10)
-humid.wake_up()
-temp = -1
-rel_humidity = -1
-try:
-    temp = humid.temperature()
-    rel_humidity = humid.humidity(temp)
-except SHT1X.AckException:
-    printt('ACK exception in temperature meter')
-    pass
-humid.sleep()
 
-if temp is None:
-    temp = -1
-if rel_humidity is None:
-    rel_humidity = -1
+class AsyncMeasurements:
+    def __init__(self, voltage=None, temperature=-1, rel_humidity=-1):
+        self.voltage = voltage
+        self.temperature = temperature
+        self.rel_humidity = rel_humidity
+
+measurements = AsyncMeasurements()
+
+from _thread import start_new_thread, allocate_lock
+
+lock = _thread.allocate_lock()
+
+def th_func(data):
+    global lock
+    lock.acquire()
+    data.voltage = adc.ADCloopMeanStdDev()
+
+    humid = SHT1X(gnd=Pin.exp_board.G7, sck=Pin.exp_board.G8, data=Pin.exp_board.G9, vcc=Pin.exp_board.G10)
+    humid.wake_up()
+    try:
+        data.temp = humid.temperature()
+        data.rel_humidity = humid.humidity(data.temp)
+    except SHT1X.AckException:
+        printt('ACK exception in temperature meter')
+        pass
+    humid.sleep()
+    lock.release()
+
+_thread.start_new_thread(th_func, (measurements,))
+
+if lock.locked():
+    printt('waiting for humidity/temp/voltage reading')
+    while lock.locked():
+        machine.idle()
 
 time_alive = alive_timer.read_ms()
+
 printt('cPM25: {}, cPM10: {}, PM25: {}, PM10: {}, temp: {}, rh: {}, Vbat: {}, time: {}' \
-        .format(mean_data.cpm25, mean_data.cpm10, mean_data.pm25, mean_data.pm10, temp, rel_humidity, voltage, time_alive))
+        .format(mean_data.cpm25, mean_data.cpm10, mean_data.pm25, mean_data.pm10, \
+         measurements.temp, measurements.rel_humidity, measurements.voltage, time_alive))
+
 
 influx_url = 'http://rpi.local:8086/write?db=mydb'
 data = 'aqi,indoor=1,version=0.1.0 pm25={},pm10={},temperature={},humidity={},voltage={},duration={}' \
-    .format(mean_data.pm25, mean_data.pm10, temp, rel_humidity, voltage, time_alive)
+    .format(mean_data.pm25, mean_data.pm10, measurements.temp, measurements.rel_humidity, measurements.voltage)
 
 success = False
 number_of_retries = 3

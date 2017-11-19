@@ -1,0 +1,9 @@
+0.1.1:
+* measure temperature, humidity and voltage in a separate thread
+
+0.1.0:
+* AQI
+* temperature
+* relative humidity
+* battery voltage
+* measurement duration
