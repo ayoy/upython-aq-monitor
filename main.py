@@ -1,5 +1,9 @@
 from network import WLAN
 import machine
+from machine import Timer
+
+alive_timer = Timer.Chrono()
+alive_timer.start()
 
 wlan = WLAN(mode=WLAN.STA)
 wlan.connect('SNSV', auth=(3, 'narodnitrida'), timeout=5000)
@@ -7,7 +11,6 @@ while not wlan.isconnected():
     machine.idle()
 
 from machine import Pin
-from machine import Timer
 from helpers import *
 import urequests
 import pycom
@@ -37,9 +40,7 @@ uart = UART(1, baudrate=9600, pins=(Pin.exp_board.G14, Pin.exp_board.G15)) # ini
 uart.deinit()
 
 
-chrono = Timer.Chrono()
 
-chrono.start()
 en.value(1)
 rst.value(1)
 
@@ -106,13 +107,13 @@ if temp is None:
 if rel_humidity is None:
     rel_humidity = -1
 
-printt('cPM25: {}, cPM10: {}, PM25: {}, PM10: {}, temp: {}, rh: {}' \
-        .format(mean_data.cpm25, mean_data.cpm10, mean_data.pm25, mean_data.pm10, temp, rel_humidity))
-
+time_alive = alive_timer.read_ms()
+printt('cPM25: {}, cPM10: {}, PM25: {}, PM10: {}, temp: {}, rh: {}, Vbat: {}, time: {}' \
+        .format(mean_data.cpm25, mean_data.cpm10, mean_data.pm25, mean_data.pm10, temp, rel_humidity, voltage, time_alive))
 
 influx_url = 'http://rpi.local:8086/write?db=mydb'
-data = 'aqi,indoor=1 pm25={},pm10={},temperature={},humidity={},voltage={}' \
-    .format(mean_data.pm25, mean_data.pm10, temp, rel_humidity, voltage)
+data = 'aqi,indoor=1,version=0.1.0 pm25={},pm10={},temperature={},humidity={},voltage={},duration={}' \
+    .format(mean_data.pm25, mean_data.pm10, temp, rel_humidity, voltage, time_alive)
 
 success = False
 number_of_retries = 3
@@ -131,10 +132,10 @@ while not success and number_of_retries > 0:
         pass
 
 printt('sleeping for 10 mins {}'.format(str(uart.any())))
-chrono.stop()
-elapsed_ms = int(chrono.read()*1000)
-chrono.reset()
+alive_timer.stop()
+elapsed_ms = int(alive_timer.read()*1000)
+alive_timer.reset()
 machine.deepsleep(600*1000 - elapsed_ms)
-# time.sleep(600 - chrono.read())
+# time.sleep(600 - alive_timer.read())
 # machine.deepsleep(5*1000)
 # time.sleep(5)
