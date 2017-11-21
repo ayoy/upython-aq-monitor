@@ -1,35 +1,68 @@
-from network import WLAN
+from helpers import *
 import machine
 from machine import Timer
+import pycom
+import _thread
+from _thread import start_new_thread, allocate_lock
+
+pycom.heartbeat(False)
+
+VERSION = '0.1.4'
 
 alive_timer = Timer.Chrono()
 alive_timer.start()
 
-wlan = WLAN(mode=WLAN.STA)
-wlan.connect('SNSV', auth=(3, 'narodnitrida'), timeout=5000)
-while not wlan.isconnected():
-    machine.idle()
-
 from machine import Pin
-from helpers import *
 import urequests
-import pycom
 import time
 import utime
 import adc
 from sht1x import SHT1X
 from pmsdata import PMSData
-pycom.heartbeat(False)
 
-printt('WLAN connection succeeded!')
-rtc = machine.RTC()
-rtc.ntp_sync("pool.ntp.org")
-while not rtc.synced():
-    machine.idle()
-time.timezone(3600)
 
 # logging to file depends on time being set so import it here
 # import console
+
+######################
+#  T/RH Measurement
+######################
+class AsyncMeasurements:
+    def __init__(self, voltage=None, temperature=-1, rel_humidity=-1):
+        self.voltage = voltage
+        self.temperature = temperature
+        self.rel_humidity = rel_humidity
+
+measurements = AsyncMeasurements()
+
+lock = _thread.allocate_lock()
+
+def th_func(data):
+    global lock
+    lock.acquire()
+
+    data.voltage = adc.ADCloopMeanStdDev()
+
+    humid = SHT1X(gnd=Pin.exp_board.G7, sck=Pin.exp_board.G8, data=Pin.exp_board.G9, vcc=Pin.exp_board.G10)
+    humid.wake_up()
+    try:
+        data.temp = humid.temperature()
+        data.rel_humidity = humid.humidity(data.temp)
+        printt('temperature: {}, humidity: {}'.format(data.temp, data.rel_humidity))
+    except SHT1X.AckException:
+        printt('ACK exception in temperature meter')
+        pass
+    finally:
+        humid.sleep()
+        connect_to_WLAN()
+        setup_rtc()
+        lock.release()
+
+
+_thread.start_new_thread(th_func, (measurements,))
+######################
+
+
 
 set_pin = Pin(Pin.exp_board.G12, mode=Pin.OUT)
 set_pin(True)
@@ -39,19 +72,17 @@ rst = Pin(Pin.exp_board.G13, mode=Pin.OUT)
 uart = UART(1, baudrate=9600, pins=(Pin.exp_board.G14, Pin.exp_board.G15)) # init with given baudrate
 uart.deinit()
 
-
-
 en.value(1)
 rst.value(1)
 
 uart.init(pins=(Pin.exp_board.G14, Pin.exp_board.G15))
 
-valid_frames_count = 10
-frames_to_skip_count = 1
+valid_frames_count = 5
 frames = []
 
-
-while len(frames) < valid_frames_count + frames_to_skip_count:
+# skip first frame because initial reading tends to be skewed
+odd_frame = True
+while len(frames) < valid_frames_count:
     wait_for_data(uart, 32)
 
     while uart.read(1) != b'\x42':
@@ -60,14 +91,16 @@ while len(frames) < valid_frames_count + frames_to_skip_count:
     if uart.read(1) == b'\x4D':
         wait_for_data(uart, 30)
 
-        try:
-            data = PMSData.from_bytes(b'\x42\x4D' + uart.read(30))
-            frames.append(data)
-            # printt('cPM25: {}, cPM10: {}, PM25: {}, PM10: {}' \
-            #     .format(data.cpm25, data.cpm10, data.pm25, data.pm10))
-        except ValueError as e:
-            printt('error reading frame: {}'.format(e.message))
-            pass
+        if odd_frame:
+            uart.readall()
+        else:
+            try:
+                data = PMSData.from_bytes(b'\x42\x4D' + uart.read(30))
+                frames.append(data)
+            except ValueError as e:
+                printt('error reading frame: {}'.format(e.message))
+                pass
+        odd_frame = not odd_frame
 
 uart.deinit()
 en.value(0)
@@ -77,8 +110,7 @@ cpm10 = 0
 pm25 = 0
 pm10 = 0
 
-# skip some first frames because initial readings tend to be skewed
-for data in frames[frames_to_skip_count:]:
+for data in frames:
     cpm25 += data.cpm25
     cpm10 += data.cpm10
     pm25 += data.pm25
@@ -87,38 +119,6 @@ for data in frames[frames_to_skip_count:]:
 
 mean_data = PMSData(cpm25/valid_frames_count, cpm10/valid_frames_count, \
                     pm25/valid_frames_count, pm10/valid_frames_count)
-
-
-
-class AsyncMeasurements:
-    def __init__(self, voltage=None, temperature=-1, rel_humidity=-1):
-        self.voltage = voltage
-        self.temperature = temperature
-        self.rel_humidity = rel_humidity
-
-measurements = AsyncMeasurements()
-
-from _thread import start_new_thread, allocate_lock
-
-lock = _thread.allocate_lock()
-
-def th_func(data):
-    global lock
-    lock.acquire()
-    data.voltage = adc.ADCloopMeanStdDev()
-
-    humid = SHT1X(gnd=Pin.exp_board.G7, sck=Pin.exp_board.G8, data=Pin.exp_board.G9, vcc=Pin.exp_board.G10)
-    humid.wake_up()
-    try:
-        data.temp = humid.temperature()
-        data.rel_humidity = humid.humidity(data.temp)
-    except SHT1X.AckException:
-        printt('ACK exception in temperature meter')
-        pass
-    humid.sleep()
-    lock.release()
-
-_thread.start_new_thread(th_func, (measurements,))
 
 if lock.locked():
     printt('waiting for humidity/temp/voltage reading')
@@ -129,12 +129,13 @@ time_alive = alive_timer.read_ms()
 
 printt('cPM25: {}, cPM10: {}, PM25: {}, PM10: {}, temp: {}, rh: {}, Vbat: {}, time: {}' \
         .format(mean_data.cpm25, mean_data.cpm10, mean_data.pm25, mean_data.pm10, \
-         measurements.temp, measurements.rel_humidity, measurements.voltage, time_alive))
+         measurements.temperature, measurements.rel_humidity, measurements.voltage, time_alive))
 
 
 influx_url = 'http://rpi.local:8086/write?db=mydb'
-data = 'aqi,indoor=1,version=0.1.0 pm25={},pm10={},temperature={},humidity={},voltage={},duration={}' \
-    .format(mean_data.pm25, mean_data.pm10, measurements.temp, measurements.rel_humidity, measurements.voltage)
+data = 'aqi,indoor=1,version={} pm25={},pm10={},temperature={},humidity={},voltage={},duration={}' \
+    .format(VERSION, mean_data.pm25, mean_data.pm10, measurements.temperature, measurements.rel_humidity, \
+     measurements.voltage, time_alive)
 
 success = False
 number_of_retries = 3

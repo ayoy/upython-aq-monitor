@@ -1,3 +1,12 @@
+0.1.4:
+* read 5 AQI samples instead of 10 (no. 2, 4, 6, 8 and 10)
+
+0.1.3:
+* disable printing with timestamp
+
+0.1.2:
+* connect to WLAN and setup RTC in a thread after temperature/humidity measurement
+
 0.1.1:
 * measure temperature, humidity and voltage in a separate thread
 
