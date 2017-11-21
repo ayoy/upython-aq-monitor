@@ -46,9 +46,9 @@ def th_func(data):
     humid = SHT1X(gnd=Pin.exp_board.G7, sck=Pin.exp_board.G8, data=Pin.exp_board.G9, vcc=Pin.exp_board.G10)
     humid.wake_up()
     try:
-        data.temp = humid.temperature()
-        data.rel_humidity = humid.humidity(data.temp)
-        printt('temperature: {}, humidity: {}'.format(data.temp, data.rel_humidity))
+        data.temperature = humid.temperature()
+        data.rel_humidity = humid.humidity(data.temperature)
+        printt('temperature: {}, humidity: {}'.format(data.temperature, data.rel_humidity))
     except SHT1X.AckException:
         printt('ACK exception in temperature meter')
         pass
