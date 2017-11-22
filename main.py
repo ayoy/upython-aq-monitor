@@ -4,13 +4,17 @@ from machine import Timer
 import pycom
 import _thread
 from _thread import start_new_thread, allocate_lock
-
-pycom.heartbeat(False)
-
-VERSION = '0.1.4'
+from machine import WDT
 
 alive_timer = Timer.Chrono()
 alive_timer.start()
+
+watchdog_timer = WDT(timeout=30000)
+
+pycom.heartbeat(False)
+
+VERSION = '0.1.5'
+
 
 from machine import Pin
 import urequests
