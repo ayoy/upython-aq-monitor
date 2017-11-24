@@ -13,7 +13,7 @@ watchdog_timer = WDT(timeout=30000)
 
 pycom.heartbeat(False)
 
-VERSION = '0.1.5'
+VERSION = '0.1.6'
 
 
 from machine import Pin
@@ -68,7 +68,7 @@ _thread.start_new_thread(th_func, (measurements,))
 
 
 
-set_pin = Pin(Pin.exp_board.G12, mode=Pin.OUT)
+set_pin = Pin(Pin.exp_board.G6, mode=Pin.OUT)
 set_pin(True)
 en = Pin(Pin.exp_board.G22, mode=Pin.OUT, pull=Pin.PULL_DOWN) # MOSFET gate
 rst = Pin(Pin.exp_board.G13, mode=Pin.OUT)

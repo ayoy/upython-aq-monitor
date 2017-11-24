@@ -1,3 +1,9 @@
+0.1.6:
+* install 700mAh battery and step-up circuit inside pycase
+
+0.1.5:
+* fix battery voltage calculation
+
 0.1.4:
 * read 5 AQI samples instead of 10 (no. 2, 4, 6, 8 and 10)
 
