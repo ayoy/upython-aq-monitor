@@ -1,10 +1,15 @@
 from helpers import *
 import machine
-from machine import Timer
+from machine import Timer, WDT, Pin
 import pycom
 import _thread
 from _thread import start_new_thread, allocate_lock
-from machine import WDT
+import urequests
+import time
+import utime
+import adc
+from sht1x import SHT1X
+from pmsdata import PMSData
 
 alive_timer = Timer.Chrono()
 alive_timer.start()
@@ -15,18 +20,6 @@ pycom.heartbeat(False)
 
 VERSION = '0.1.6'
 
-
-from machine import Pin
-import urequests
-import time
-import utime
-import adc
-from sht1x import SHT1X
-from pmsdata import PMSData
-
-
-# logging to file depends on time being set so import it here
-# import console
 
 ######################
 #  T/RH Measurement
@@ -52,13 +45,13 @@ def th_func(data):
     try:
         data.temperature = humid.temperature()
         data.rel_humidity = humid.humidity(data.temperature)
-        printt('temperature: {}, humidity: {}'.format(data.temperature, data.rel_humidity))
+        print('temperature: {}, humidity: {}'.format(data.temperature, data.rel_humidity))
     except SHT1X.AckException:
-        printt('ACK exception in temperature meter')
+        print('ACK exception in temperature meter')
         pass
     finally:
         humid.sleep()
-        connect_to_WLAN()
+        connect_to_WLAN('SSID', 'passkey')
         setup_rtc()
         lock.release()
 
@@ -102,7 +95,7 @@ while len(frames) < valid_frames_count:
                 data = PMSData.from_bytes(b'\x42\x4D' + uart.read(30))
                 frames.append(data)
             except ValueError as e:
-                printt('error reading frame: {}'.format(e.message))
+                print('error reading frame: {}'.format(e.message))
                 pass
         odd_frame = not odd_frame
 
@@ -125,13 +118,13 @@ mean_data = PMSData(cpm25/valid_frames_count, cpm10/valid_frames_count, \
                     pm25/valid_frames_count, pm10/valid_frames_count)
 
 if lock.locked():
-    printt('waiting for humidity/temp/voltage reading')
+    print('waiting for humidity/temp/voltage reading')
     while lock.locked():
         machine.idle()
 
 time_alive = alive_timer.read_ms()
 
-printt('cPM25: {}, cPM10: {}, PM25: {}, PM10: {}, temp: {}, rh: {}, Vbat: {}, time: {}' \
+print('cPM25: {}, cPM10: {}, PM25: {}, PM10: {}, temp: {}, rh: {}, Vbat: {}, time: {}' \
         .format(mean_data.cpm25, mean_data.cpm10, mean_data.pm25, mean_data.pm10, \
          measurements.temperature, measurements.rel_humidity, measurements.voltage, time_alive))
 
@@ -153,15 +146,12 @@ while not success and number_of_retries > 0:
 
         success = True
     except OSError as e:
-        printt('network error: {}'.format(e.errno))
+        print('network error: {}'.format(e.errno))
         number_of_retries -= 1
         pass
 
-printt('sleeping for 10 mins {}'.format(str(uart.any())))
+print('sleeping for 10 mins {}'.format(str(uart.any())))
 alive_timer.stop()
 elapsed_ms = int(alive_timer.read()*1000)
 alive_timer.reset()
 machine.deepsleep(600*1000 - elapsed_ms)
-# time.sleep(600 - alive_timer.read())
-# machine.deepsleep(5*1000)
-# time.sleep(5)
