@@ -9,7 +9,7 @@ import time
 import utime
 import adc
 from sht1x import SHT1X
-from pmsdata import PMSData
+from pms5003 import PMS5003, PMSData
 
 alive_timer = Timer.Chrono()
 alive_timer.start()
@@ -18,7 +18,7 @@ watchdog_timer = WDT(timeout=30000)
 
 pycom.heartbeat(False)
 
-VERSION = '0.1.6'
+VERSION = '0.1.7'
 
 
 ######################
@@ -59,47 +59,14 @@ def th_func(data):
 _thread.start_new_thread(th_func, (measurements,))
 ######################
 
+en = Pin(Pin.exp_board.G6, mode=Pin.OUT, pull=Pin.PULL_DOWN) # MOSFET gate
+en(True)
 
+aq_sensor = PMS5003(Pin.exp_board.G22, Pin.exp_board.G14, Pin.exp_board.G15, Pin.exp_board.G13)
+aq_sensor.wake_up()
+frames = aq_sensor.read_frames(5)
+aq_sensor.idle()
 
-set_pin = Pin(Pin.exp_board.G6, mode=Pin.OUT)
-set_pin(True)
-en = Pin(Pin.exp_board.G22, mode=Pin.OUT, pull=Pin.PULL_DOWN) # MOSFET gate
-rst = Pin(Pin.exp_board.G13, mode=Pin.OUT)
-
-uart = UART(1, baudrate=9600, pins=(Pin.exp_board.G14, Pin.exp_board.G15)) # init with given baudrate
-uart.deinit()
-
-en.value(1)
-rst.value(1)
-
-uart.init(pins=(Pin.exp_board.G14, Pin.exp_board.G15))
-
-valid_frames_count = 5
-frames = []
-
-# skip first frame because initial reading tends to be skewed
-odd_frame = True
-while len(frames) < valid_frames_count:
-    wait_for_data(uart, 32)
-
-    while uart.read(1) != b'\x42':
-        machine.idle()
-
-    if uart.read(1) == b'\x4D':
-        wait_for_data(uart, 30)
-
-        if odd_frame:
-            uart.readall()
-        else:
-            try:
-                data = PMSData.from_bytes(b'\x42\x4D' + uart.read(30))
-                frames.append(data)
-            except ValueError as e:
-                print('error reading frame: {}'.format(e.message))
-                pass
-        odd_frame = not odd_frame
-
-uart.deinit()
 en.value(0)
 
 cpm25 = 0
@@ -114,8 +81,8 @@ for data in frames:
     pm10 += data.pm10
 
 
-mean_data = PMSData(cpm25/valid_frames_count, cpm10/valid_frames_count, \
-                    pm25/valid_frames_count, pm10/valid_frames_count)
+mean_data = PMSData(cpm25/len(frames), cpm10/len(frames), \
+                    pm25/len(frames), pm10/len(frames))
 
 if lock.locked():
     print('waiting for humidity/temp/voltage reading')
@@ -139,7 +106,7 @@ number_of_retries = 3
 
 while not success and number_of_retries > 0:
     try:
-        urequests.post(influx_url, data=data)
+        # urequests.post(influx_url, data=data)
         pycom.rgbled(0x008800)
         time.sleep_ms(20)
         pycom.rgbled(0x000000)
@@ -150,7 +117,7 @@ while not success and number_of_retries > 0:
         number_of_retries -= 1
         pass
 
-print('sleeping for 10 mins {}'.format(str(uart.any())))
+print('sleeping for 10 mins')
 alive_timer.stop()
 elapsed_ms = int(alive_timer.read()*1000)
 alive_timer.reset()

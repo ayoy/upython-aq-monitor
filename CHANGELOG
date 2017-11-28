@@ -1,3 +1,6 @@
+0.1.7:
+* clean up project file, move PMS code to PMS5003 class
+
 0.1.6:
 * install 700mAh battery and step-up circuit inside pycase
 
