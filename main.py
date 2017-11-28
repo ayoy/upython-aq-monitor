@@ -1,15 +1,14 @@
-from helpers import *
+import pycom
 import machine
 from machine import Timer, WDT, Pin
-import pycom
+from helpers import *
 import _thread
 from _thread import start_new_thread, allocate_lock
-import urequests
-import time
 import utime
 import adc
 from sht1x import SHT1X
 from pms5003 import PMS5003, PMSData
+import influxdb
 
 alive_timer = Timer.Chrono()
 alive_timer.start()
@@ -18,7 +17,7 @@ watchdog_timer = WDT(timeout=30000)
 
 pycom.heartbeat(False)
 
-VERSION = '0.1.7'
+VERSION = '0.2.0'
 
 
 ######################
@@ -51,9 +50,16 @@ def th_func(data):
         pass
     finally:
         humid.sleep()
-        connect_to_WLAN('SSID', 'passkey')
+
+    rtc_synced = pycom.nvs_get('rtc_synced')
+    if rtc_synced is None:
+        print ('RTC not synced, syncing now')
+        wlan = connect_to_WLAN('SSID', 'passkey')
         setup_rtc()
-        lock.release()
+        wlan.deinit()
+        pycom.nvs_set('rtc_synced', 1)
+
+    lock.release()
 
 
 _thread.start_new_thread(th_func, (measurements,))
@@ -90,35 +96,19 @@ if lock.locked():
         machine.idle()
 
 time_alive = alive_timer.read_ms()
+timestamp = utime.time()
 
 print('cPM25: {}, cPM10: {}, PM25: {}, PM10: {}, temp: {}, rh: {}, Vbat: {}, time: {}' \
         .format(mean_data.cpm25, mean_data.cpm10, mean_data.pm25, mean_data.pm10, \
          measurements.temperature, measurements.rel_humidity, measurements.voltage, time_alive))
 
-
-influx_url = 'http://rpi.local:8086/write?db=mydb'
-data = 'aqi,indoor=1,version={} pm25={},pm10={},temperature={},humidity={},voltage={},duration={}' \
+data = 'aqi,indoor=1,version={} pm25={},pm10={},temperature={},humidity={},voltage={},duration={} {}000000000' \
     .format(VERSION, mean_data.pm25, mean_data.pm10, measurements.temperature, measurements.rel_humidity, \
-     measurements.voltage, time_alive)
+     measurements.voltage, time_alive, timestamp)
 
-success = False
-number_of_retries = 3
-
-while not success and number_of_retries > 0:
-    try:
-        # urequests.post(influx_url, data=data)
-        pycom.rgbled(0x008800)
-        time.sleep_ms(20)
-        pycom.rgbled(0x000000)
-
-        success = True
-    except OSError as e:
-        print('network error: {}'.format(e.errno))
-        number_of_retries -= 1
-        pass
-
-print('sleeping for 10 mins')
+influxdb.store_data(data)
 alive_timer.stop()
 elapsed_ms = int(alive_timer.read()*1000)
 alive_timer.reset()
+print('sleeping for 10 mins')
 machine.deepsleep(600*1000 - elapsed_ms)

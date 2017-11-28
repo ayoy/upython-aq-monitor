@@ -10,7 +10,7 @@ def connect_to_WLAN(ssid, passkey):
     while not wlan.isconnected():
         utime.sleep_ms(500)
     print('WLAN connection succeeded!')
-
+    return wlan
 
 def setup_rtc():
     rtc = machine.RTC()
