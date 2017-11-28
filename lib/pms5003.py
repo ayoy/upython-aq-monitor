@@ -1,6 +1,7 @@
 import machine
 from machine import UART, Pin
 from helpers import *
+import utime
 
 class PMS5003:
     def __init__(self, en, tx, rx, rst):
@@ -19,6 +20,8 @@ class PMS5003:
         self.en(True)
         self.rst(True)
         self.uart.init(pins=(self.tx, self.rx))
+        # sleep for 7 seconds to initialize the sensor properly
+        utime.sleep_ms(7000)
 
 
     def idle(self):
@@ -28,8 +31,8 @@ class PMS5003:
 
     def read_frames(self, count):
         frames = []
-        # skip first frame because initial reading tends to be skewed
-        odd_frame = True
+        # flush the buffer to read fresh data
+        self.uart.readall()
         while len(frames) < count:
             self.__wait_for_data(32)
 
@@ -39,16 +42,14 @@ class PMS5003:
             if self.uart.read(1) == b'\x4D':
                 self.__wait_for_data(30)
 
-                if odd_frame:
-                    self.uart.readall()
-                else:
-                    try:
-                        data = PMSData.from_bytes(b'\x42\x4D' + self.uart.read(30))
-                        frames.append(data)
-                    except ValueError as e:
-                        print('error reading frame: {}'.format(e.message))
-                        pass
-                odd_frame = not odd_frame
+                try:
+                    data = PMSData.from_bytes(b'\x42\x4D' + self.uart.read(30))
+                    print('cPM25: {}, cPM10: {}, PM25: {}, PM10: {}' \
+                            .format(data.cpm25, data.cpm10, data.pm25, data.pm10))
+                    frames.append(data)
+                except ValueError as e:
+                    print('error reading frame: {}'.format(e.message))
+                    pass
 
         return frames
 
