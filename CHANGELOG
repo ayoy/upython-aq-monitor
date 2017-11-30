@@ -1,3 +1,5 @@
+0.2.2: Keep data file locally until it has been successfully posted
+
 0.2.1: Resync RTC every time when connecting to WLAN
 
 0.2.0: Gather data every 10 minutes, but send every hour

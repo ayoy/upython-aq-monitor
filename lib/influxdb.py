@@ -23,9 +23,15 @@ def store_data(data):
         try:
             with open(__filename(), 'r') as data_file:
                 all_data = data_file.read()
+
             uos.unlink(__filename())
             all_data += data
-            __send_data(all_data)
+
+            if not __send_data(all_data):
+                with open(__filename(), 'w') as data_file:
+                    __save_data_to_file(all_data)
+                    pycom.nvs_set('queue_size', queue_size+1)
+
         except OSError as e:
             print('file access error: {}'.format(e.errno))
             __save_data_to_file(data)
@@ -62,3 +68,5 @@ def __send_data(data):
             print('network error: {}'.format(e.errno))
             number_of_retries -= 1
             pass
+
+    return success
