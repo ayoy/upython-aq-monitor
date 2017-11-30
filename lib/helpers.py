@@ -18,3 +18,11 @@ def setup_rtc():
     while not rtc.synced():
         utime.sleep_ms(500)
     time.timezone(3600)
+
+def flash_led(color, n=1):
+    for _ in range(n):
+        pycom.rgbled(color)
+        utime.sleep_ms(20)
+        pycom.rgbled(0x000000)
+        if n != 1:
+            utime.sleep_ms(200)

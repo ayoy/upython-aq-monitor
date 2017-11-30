@@ -1,6 +1,6 @@
 import pycom
 import machine
-from machine import Timer, Pin
+from machine import Timer, Pin, PWM
 from helpers import *
 import _thread
 from _thread import start_new_thread, allocate_lock
@@ -9,6 +9,11 @@ import adc
 from sht1x import SHT1X
 from pms5003 import PMS5003, PMSData
 import influxdb
+
+# enable expansion board LED while keeping it disabled in deep sleep
+led_pin = Pin('P9', mode=Pin.OUT)
+pwm = PWM(0, frequency=5000)
+pwmchannel = pwm.channel(0, pin='P9', duty_cycle=0.99)
 
 alive_timer = Timer.Chrono()
 alive_timer.start()
@@ -110,4 +115,5 @@ alive_timer.stop()
 elapsed_ms = int(alive_timer.read()*1000)
 alive_timer.reset()
 print('sleeping for 10 mins')
+pwmchannel.duty_cycle(1)
 machine.deepsleep(600*1000 - elapsed_ms)

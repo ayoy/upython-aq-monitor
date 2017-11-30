@@ -2,12 +2,16 @@ import uos
 import pycom
 import urequests
 import utime
-from helpers import connect_to_WLAN, setup_rtc
+from helpers import *
 
 __max_queue_size = const(5)
 
 def cleanup():
-    uos.unlink(__filename())
+    try:
+        uos.unlink(__filename())
+    except OSError as e:
+        print('error while removing data file: {}'.format(e.errno))
+        pass
 
 def __queue_size():
     return pycom.nvs_get('queue_size') or 0
@@ -24,10 +28,13 @@ def store_data(data):
             with open(__filename(), 'r') as data_file:
                 all_data = data_file.read()
 
-            uos.unlink(__filename())
+            cleanup()
             all_data += data
 
-            if not __send_data(all_data):
+            if __send_data(all_data):
+                flash_led(0x008800, 3)
+            else:
+                flash_led(0x880000, 3)
                 with open(__filename(), 'w') as data_file:
                     __save_data_to_file(all_data)
                     pycom.nvs_set('queue_size', queue_size+1)
@@ -39,6 +46,7 @@ def store_data(data):
         pycom.nvs_set('queue_size', 0)
     else:
         __save_data_to_file(data)
+        flash_led(0x888888)
         pycom.nvs_set('queue_size', queue_size+1)
 
 def __save_data_to_file(data):
@@ -59,10 +67,6 @@ def __send_data(data):
             urequests.post(influx_url, data=data)
             setup_rtc()
             wlan.deinit()
-            pycom.rgbled(0x008800)
-            utime.sleep_ms(20)
-            pycom.rgbled(0x000000)
-
             success = True
         except OSError as e:
             print('network error: {}'.format(e.errno))
