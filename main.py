@@ -10,6 +10,10 @@ from sht1x import SHT1X
 from pms5003 import PMS5003, PMSData
 import influxdb
 
+pycom.heartbeat(False)
+
+VERSION = '0.3.0'
+
 # enable expansion board LED while keeping it disabled in deep sleep
 led_pin = Pin('P9', mode=Pin.OUT)
 pwm = PWM(0, frequency=5000)
@@ -18,10 +22,28 @@ pwmchannel = pwm.channel(0, pin='P9', duty_cycle=0.99)
 alive_timer = Timer.Chrono()
 alive_timer.start()
 
+def tear_down(timer, pwmchannel, initial_time_remaining):
+    timer.stop()
+    elapsed_ms = int(timer.read()*1000)
+    timer.reset()
+    time_remaining = initial_time_remaining - elapsed_ms
+    print('sleeping for {}ms'.format(time_remaining))
+    pwmchannel.duty_cycle(1)
 
-pycom.heartbeat(False)
+    deepsleep_pin = Pin('P10', mode=Pin.IN, pull=Pin.PULL_UP)
+    machine.pin_deepsleep_wakeup(pins=[deepsleep_pin], mode=machine.WAKEUP_ALL_LOW, enable_pull=True)
+    machine.deepsleep(time_remaining)
 
-VERSION = '0.2.1'
+
+########################################
+## Handle wake by button to send data
+########################################
+
+if machine.wake_reason()[0] is machine.PIN_WAKE:
+    time_remaining = machine.remaining_sleep_time()
+    influxdb.send_data_adhoc()
+    tear_down(alive_timer, pwmchannel, time_remaining)
+
 
 
 ######################
@@ -111,9 +133,4 @@ data = 'aqi,indoor=1,version={} pm25={},pm10={},temperature={},humidity={},volta
      measurements.voltage, time_alive, timestamp)
 
 influxdb.store_data(data)
-alive_timer.stop()
-elapsed_ms = int(alive_timer.read()*1000)
-alive_timer.reset()
-print('sleeping for 10 mins')
-pwmchannel.duty_cycle(1)
-machine.deepsleep(600*1000 - elapsed_ms)
+tear_down(alive_timer, pwmchannel, 600*1000)

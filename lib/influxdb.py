@@ -13,11 +13,37 @@ def cleanup():
         print('error while removing data file: {}'.format(e.errno))
         pass
 
+
 def __queue_size():
     return pycom.nvs_get('queue_size') or 0
 
+
 def __filename():
     return '{}{}data.txt'.format(uos.getcwd(), uos.sep)
+
+
+def send_data_adhoc():
+    queue_size = __queue_size()
+    if queue_size > 0:
+        try:
+            all_data = None
+            with open(__filename(), 'r') as data_file:
+                all_data = data_file.read()
+
+            if __send_data(all_data):
+                cleanup()
+                flash_led(0x008800, 10)
+            else:
+                flash_led(0x880000, 10)
+
+        except OSError as e:
+            print('file access error: {}'.format(e.errno))
+            flash_led(0x880000, 5)
+            pass
+    else:
+        # no data to send
+        flash_led(0x000088, 1)
+
 
 def store_data(data):
     queue_size = __queue_size()
@@ -33,6 +59,7 @@ def store_data(data):
 
             if __send_data(all_data):
                 flash_led(0x008800, 3)
+                pycom.nvs_set('queue_size', 0)
             else:
                 flash_led(0x880000, 3)
                 with open(__filename(), 'w') as data_file:
@@ -43,11 +70,11 @@ def store_data(data):
             print('file access error: {}'.format(e.errno))
             __save_data_to_file(data)
             pass
-        pycom.nvs_set('queue_size', 0)
     else:
         __save_data_to_file(data)
         flash_led(0x888888)
         pycom.nvs_set('queue_size', queue_size+1)
+
 
 def __save_data_to_file(data):
     with open(__filename(), 'a') as data_file:
@@ -64,8 +91,8 @@ def __send_data(data):
     while not success and number_of_retries > 0:
         try:
             wlan = connect_to_WLAN('SSID', 'passkey')
-            urequests.post(influx_url, data=data)
             setup_rtc()
+            urequests.post(influx_url, data=data)
             wlan.deinit()
             success = True
         except OSError as e:
