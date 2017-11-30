@@ -1,6 +1,6 @@
 import pycom
 import machine
-from machine import Timer, WDT, Pin
+from machine import Timer, Pin
 from helpers import *
 import _thread
 from _thread import start_new_thread, allocate_lock
@@ -13,7 +13,6 @@ import influxdb
 alive_timer = Timer.Chrono()
 alive_timer.start()
 
-watchdog_timer = WDT(timeout=30000)
 
 pycom.heartbeat(False)
 
