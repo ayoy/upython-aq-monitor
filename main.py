@@ -17,7 +17,7 @@ watchdog_timer = WDT(timeout=30000)
 
 pycom.heartbeat(False)
 
-VERSION = '0.2.0'
+VERSION = '0.2.1'
 
 
 ######################

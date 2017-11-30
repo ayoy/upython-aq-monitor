@@ -2,7 +2,7 @@ import uos
 import pycom
 import urequests
 import utime
-from helpers import connect_to_WLAN
+from helpers import connect_to_WLAN, setup_rtc
 
 __max_queue_size = const(5)
 
@@ -51,6 +51,7 @@ def __send_data(data):
         try:
             wlan = connect_to_WLAN('SSID', 'passkey')
             urequests.post(influx_url, data=data)
+            setup_rtc()
             wlan.deinit()
             pycom.rgbled(0x008800)
             utime.sleep_ms(20)

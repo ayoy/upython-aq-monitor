@@ -1,3 +1,15 @@
+0.2.1: Resync RTC every time when connecting to WLAN
+
+0.2.0: Gather data every 10 minutes, but send every hour
+    
+    1. Store measurements data in a text file on flash
+    2. Once 5 measurements are stored, after taking sixth one
+       send all the data to influx and remove the file
+    3. WiFi is required before first ever measurement to set up RTC
+       and every hour to send data to influx
+    4. Some helper data is stored in NVRAM - adjust boot.py to reset
+       NVRAM and delete cached measurements on hard resets
+
 0.1.7:
 * clean up project file, move PMS code to PMS5003 class
 
