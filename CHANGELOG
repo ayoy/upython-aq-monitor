@@ -1,3 +1,12 @@
+0.4.0: Send data to Thingspeak using MQTT and measure outside T/RH
+
+  * send hourly mean data (average of last 6 measurements) - this is mainly to learn how
+    MQTT works, it's suboptimal and it should use REST API and send batched updates with
+    multiple measurements
+  * Add DataPoint class that gathers all measurements and has adapters for influx and
+    thingspeak formats
+  * Move keys to keychain.py that's outside the repository
+
 0.3.0: Button to trigger sending all available data
 
 0.2.2: Keep data file locally until it has been successfully posted

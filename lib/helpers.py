@@ -3,14 +3,22 @@ import time
 import machine
 import pycom
 from network import WLAN
+from keychain import *
 
-def connect_to_WLAN(ssid, passkey):
+def connect_to_WLAN():
     wlan = WLAN(mode=WLAN.STA)
-    wlan.connect(ssid, auth=(3, passkey), timeout=5000)
+    if not wlan.isconnected():
+        wlan = __connect_to_WLAN(wlan, WLAN_SSID, WLAN_PASSKEY)
+    return wlan
+
+
+def __connect_to_WLAN(wlan, ssid, passkey):
+    wlan.connect(ssid, auth=(WLAN.WPA2, passkey), timeout=10000)
     while not wlan.isconnected():
         utime.sleep_ms(500)
     print('WLAN connection succeeded!')
     return wlan
+
 
 def setup_rtc():
     rtc = machine.RTC()
@@ -18,6 +26,7 @@ def setup_rtc():
     while not rtc.synced():
         utime.sleep_ms(500)
     time.timezone(3600)
+
 
 def flash_led(color, n=1):
     for _ in range(n):

@@ -3,21 +3,26 @@ import machine
 from machine import Timer, Pin, PWM
 from helpers import *
 import _thread
-from _thread import start_new_thread, allocate_lock
 import utime
 import adc
 from sht1x import SHT1X
 from pms5003 import PMS5003, PMSData
-import influxdb
+import persistence
+from datapoint import DataPoint
 
 pycom.heartbeat(False)
 
-VERSION = '0.3.0'
+VERSION = '0.4.0'
 
 # enable expansion board LED while keeping it disabled in deep sleep
 led_pin = Pin('P9', mode=Pin.OUT)
-pwm = PWM(0, frequency=5000)
-pwmchannel = pwm.channel(0, pin='P9', duty_cycle=0.99)
+try:
+    pwm = PWM(0, frequency=5000)
+    pwmchannel = pwm.channel(0, pin='P9', duty_cycle=0.99)
+except ValueError:
+    led_pin(True)
+    pass
+
 
 alive_timer = Timer.Chrono()
 alive_timer.start()
@@ -65,7 +70,9 @@ def th_func(data):
 
     data.voltage = adc.ADCloopMeanStdDev()
 
-    humid = SHT1X(gnd=Pin.exp_board.G7, sck=Pin.exp_board.G8, data=Pin.exp_board.G9, vcc=Pin.exp_board.G10)
+    # wait for 1s just in case - to avoid exceptions in T/RH sensor
+    utime.sleep(1)
+    humid = SHT1X(gnd=Pin.exp_board.G10, sck=Pin.exp_board.G9, data=Pin.exp_board.G8, vcc=Pin.exp_board.G7)
     humid.wake_up()
     try:
         data.temperature = humid.temperature()
@@ -80,7 +87,7 @@ def th_func(data):
     rtc_synced = pycom.nvs_get('rtc_synced')
     if rtc_synced is None:
         print ('RTC not synced, syncing now')
-        wlan = connect_to_WLAN('SSID', 'passkey')
+        wlan = connect_to_WLAN()
         setup_rtc()
         wlan.deinit()
         pycom.nvs_set('rtc_synced', 1)
@@ -128,9 +135,8 @@ print('cPM25: {}, cPM10: {}, PM25: {}, PM10: {}, temp: {}, rh: {}, Vbat: {}, tim
         .format(mean_data.cpm25, mean_data.cpm10, mean_data.pm25, mean_data.pm10, \
          measurements.temperature, measurements.rel_humidity, measurements.voltage, time_alive))
 
-data = 'aqi,indoor=1,version={} pm25={},pm10={},temperature={},humidity={},voltage={},duration={} {}000000000' \
-    .format(VERSION, mean_data.pm25, mean_data.pm10, measurements.temperature, measurements.rel_humidity, \
-     measurements.voltage, time_alive, timestamp)
+datapoint = DataPoint(timestamp=timestamp, pm10=mean_data.pm10, pm25=mean_data.pm25, temperature=measurements.temperature,
+                      humidity=measurements.rel_humidity, voltage=measurements.voltage, duration=time_alive, version=VERSION)
 
-influxdb.store_data(data)
+persistence.store_datapoint(datapoint)
 tear_down(alive_timer, pwmchannel, 600*1000)
