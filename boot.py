@@ -3,11 +3,21 @@ import pycom
 import persistence
 from network import Bluetooth, WLAN
 from machine import WDT
+import sys
 
 bluetooth = Bluetooth()
 bluetooth.deinit()
 wlan = WLAN(mode=WLAN.STA)
 wlan.deinit()
+
+########################################
+## Handle wake by button to enter debug mode
+########################################
+
+if machine.wake_reason()[0] is machine.PIN_WAKE:
+    connect_to_WLAN()
+    sys.exit()
+
 
 watchdog_timer = None
 

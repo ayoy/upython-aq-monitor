@@ -40,17 +40,6 @@ def tear_down(timer, pwmchannel, initial_time_remaining):
     machine.deepsleep(time_remaining)
 
 
-########################################
-## Handle wake by button to send data
-########################################
-
-if machine.wake_reason()[0] is machine.PIN_WAKE:
-    time_remaining = machine.remaining_sleep_time()
-    influxdb.send_data_adhoc()
-    tear_down(alive_timer, pwmchannel, time_remaining)
-
-
-
 ######################
 #  T/RH Measurement
 ######################
