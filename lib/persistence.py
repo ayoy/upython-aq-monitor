@@ -62,11 +62,13 @@ def store_datapoint(datapoint):
         datapoints = []
         try:
             with open(__filename(), 'r') as data_file:
-                try:
-                    json_dict = ujson.loads(data_file.readline().rstrip())
-                    datapoints.append(DataPoint(**json_dict))
-                except ValueError:
-                    pass
+                for line in data_file:
+                    try:
+                        json_dict = ujson.loads(line.rstrip())
+                        datapoints.append(DataPoint(**json_dict))
+                    except ValueError as e:
+                        print('error while reading data from flash: {}'.format(e.errno))
+                        pass
 
             datapoints.append(datapoint)
 
