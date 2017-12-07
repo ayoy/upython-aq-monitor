@@ -27,19 +27,22 @@ class DataPoint:
         mean_temperature = 0
         mean_humidity = 0
         mean_duration = 0
+        valid_temp_datapoints = 0
 
         for d in datapoints:
             mean_pm10 += d.pm10
             mean_pm25 += d.pm25
-            mean_temperature += d.temperature
-            mean_humidity += d.humidity
-            mean_duration = d.duration
+            mean_duration += d.duration
+            if d.temperature is not -1:
+                mean_temperature += d.temperature
+                mean_humidity += d.humidity
+                valid_temp_datapoints += 1
 
         return cls(
             pm10 = mean_pm10/len(datapoints),
             pm25 = mean_pm25/len(datapoints),
-            temperature = mean_temperature/len(datapoints),
-            humidity = mean_humidity/len(datapoints),
+            temperature = mean_temperature/valid_temp_datapoints,
+            humidity = mean_humidity/valid_temp_datapoints,
             duration = mean_duration/len(datapoints),
             voltage = datapoints[-1].voltage,
             version = datapoints[-1].version,
