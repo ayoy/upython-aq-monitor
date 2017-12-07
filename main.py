@@ -12,7 +12,7 @@ from datapoint import DataPoint
 
 pycom.heartbeat(False)
 
-VERSION = '0.4.0'
+VERSION = '0.4.1'
 
 # enable expansion board LED while keeping it disabled in deep sleep
 led_pin = Pin('P9', mode=Pin.OUT)
@@ -59,8 +59,6 @@ def th_func(data):
 
     data.voltage = adc.ADCloopMeanStdDev()
 
-    # wait for 1s just in case - to avoid exceptions in T/RH sensor
-    utime.sleep(1)
     humid = SHT1X(gnd=Pin.exp_board.G10, sck=Pin.exp_board.G9, data=Pin.exp_board.G8, vcc=Pin.exp_board.G7)
     humid.wake_up()
     try:
@@ -69,6 +67,7 @@ def th_func(data):
         print('temperature: {}, humidity: {}'.format(data.temperature, data.rel_humidity))
     except SHT1X.AckException:
         print('ACK exception in temperature meter')
+        pycom.rgbled(0x443300)
         pass
     finally:
         humid.sleep()
@@ -128,4 +127,5 @@ datapoint = DataPoint(timestamp=timestamp, pm10=mean_data.pm10, pm25=mean_data.p
                       humidity=measurements.rel_humidity, voltage=measurements.voltage, duration=time_alive, version=VERSION)
 
 persistence.store_datapoint(datapoint)
-tear_down(alive_timer, pwmchannel, 600*1000)
+# sleep for 10 minutes - 5 seconds :)
+tear_down(alive_timer, pwmchannel, 595*1000)

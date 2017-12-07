@@ -101,4 +101,7 @@ venv.bak/
 # mypy
 .mypy_cache/
 
+*~
+.*~
 lib/keychain.py
+datapoints.txt

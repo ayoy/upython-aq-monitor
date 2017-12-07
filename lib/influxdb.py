@@ -1,8 +1,6 @@
 import urequests
 from helpers import *
 
-__max_queue_size = const(5)
-
 def send_to_influx(datapoints):
     data = '\n'.join(d.to_influx() for d in datapoints)
 

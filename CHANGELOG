@@ -1,5 +1,10 @@
-0.4.0: Send data to Thingspeak using MQTT and measure outside T/RH
+0.4.1 - 2017/12/07: 
+  * Fix reading datapoints from file
+  * Fix computing mean datapoint
+  * Use wake by button to enable debug mode (enable WiFi and exit) 
+  * Sleep for 595 seconds (5s to compensate for boot-up time)
 
+0.4.0: Send data to Thingspeak using MQTT and measure outside T/RH
   * send hourly mean data (average of last 6 measurements) - this is mainly to learn how
     MQTT works, it's suboptimal and it should use REST API and send batched updates with
     multiple measurements
@@ -10,7 +15,6 @@
 0.3.0: Button to trigger sending all available data
 
 0.2.2: Keep data file locally until it has been successfully posted
-
 	* also add LED flashing for storing data, sending data and failing to send data
 	* disable expansion board LED during deep sleep
 	* move Watchdog to boot.py
@@ -18,39 +22,38 @@
 0.2.1: Resync RTC every time when connecting to WLAN
 
 0.2.0: Gather data every 10 minutes, but send every hour
-    
-    1. Store measurements data in a text file on flash
-    2. Once 5 measurements are stored, after taking sixth one
-       send all the data to influx and remove the file
-    3. WiFi is required before first ever measurement to set up RTC
-       and every hour to send data to influx
-    4. Some helper data is stored in NVRAM - adjust boot.py to reset
-       NVRAM and delete cached measurements on hard resets
+  * Store measurements data in a text file on flash
+  * Once 5 measurements are stored, after taking sixth one
+    send all the data to influx and remove the file
+  * WiFi is required before first ever measurement to set up RTC
+    and every hour to send data to influx
+  * Some helper data is stored in NVRAM - adjust boot.py to reset
+    NVRAM and delete cached measurements on hard resets
 
 0.1.7:
-* clean up project file, move PMS code to PMS5003 class
+  * clean up project file, move PMS code to PMS5003 class
 
 0.1.6:
-* install 700mAh battery and step-up circuit inside pycase
+  * install 700mAh battery and step-up circuit inside pycase
 
 0.1.5:
-* fix battery voltage calculation
+  * fix battery voltage calculation
 
 0.1.4:
-* read 5 AQI samples instead of 10 (no. 2, 4, 6, 8 and 10)
+  * read 5 AQI samples instead of 10 (no. 2, 4, 6, 8 and 10)
 
 0.1.3:
-* disable printing with timestamp
+  * disable printing with timestamp
 
 0.1.2:
-* connect to WLAN and setup RTC in a thread after temperature/humidity measurement
+  * connect to WLAN and setup RTC in a thread after temperature/humidity measurement
 
 0.1.1:
-* measure temperature, humidity and voltage in a separate thread
+  * measure temperature, humidity and voltage in a separate thread
 
 0.1.0:
-* AQI
-* temperature
-* relative humidity
-* battery voltage
-* measurement duration
+  * AQI
+  * temperature
+  * relative humidity
+  * battery voltage
+  * measurement duration
