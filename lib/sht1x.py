@@ -44,6 +44,8 @@ class SHT1X:
         self.vcc = vcc
 
         self.gnd.mode(Pin.OUT)
+        self.gnd.mode(Pin.PULL_DOWN)
+        self.vcc.mode(Pin.PULL_UP)
         self.vcc.mode(Pin.OUT)
         self.sck.mode(Pin.OUT)
         self.sck.pull(None)
