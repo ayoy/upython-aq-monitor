@@ -57,7 +57,7 @@ def th_func(data):
     global lock
     lock.acquire()
 
-    data.voltage = adc.ADCloopMeanStdDev()
+    data.voltage = adc.vbatt()
 
     humid = SHT1X(gnd=Pin.exp_board.G10, sck=Pin.exp_board.G9, data=Pin.exp_board.G8, vcc=Pin.exp_board.G7)
     humid.wake_up()
