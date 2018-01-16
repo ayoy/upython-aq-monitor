@@ -12,28 +12,17 @@ from datapoint import DataPoint
 
 pycom.heartbeat(False)
 
-VERSION = '0.4.1'
-
-# enable expansion board LED while keeping it disabled in deep sleep
-led_pin = Pin('P9', mode=Pin.OUT)
-try:
-    pwm = PWM(0, frequency=5000)
-    pwmchannel = pwm.channel(0, pin='P9', duty_cycle=0.99)
-except ValueError:
-    led_pin(True)
-    pass
-
+VERSION = '0.5.0'
 
 alive_timer = Timer.Chrono()
 alive_timer.start()
 
-def tear_down(timer, pwmchannel, initial_time_remaining):
+def tear_down(timer, initial_time_remaining):
     timer.stop()
     elapsed_ms = int(timer.read()*1000)
     timer.reset()
     time_remaining = initial_time_remaining - elapsed_ms
     print('sleeping for {}ms'.format(time_remaining))
-    pwmchannel.duty_cycle(1)
 
     deepsleep_pin = Pin('P10', mode=Pin.IN, pull=Pin.PULL_UP)
     machine.pin_deepsleep_wakeup(pins=[deepsleep_pin], mode=machine.WAKEUP_ALL_LOW, enable_pull=True)
@@ -89,7 +78,7 @@ _thread.start_new_thread(th_func, (measurements,))
 en = Pin(Pin.exp_board.G6, mode=Pin.OUT, pull=Pin.PULL_DOWN) # MOSFET gate
 en(True)
 
-aq_sensor = PMS5003(Pin.exp_board.G22, Pin.exp_board.G14, Pin.exp_board.G15, Pin.exp_board.G13)
+aq_sensor = PMS5003(Pin.exp_board.G15, Pin.exp_board.G24, Pin.exp_board.G11, Pin.exp_board.G16)
 aq_sensor.wake_up()
 frames = aq_sensor.read_frames(5)
 aq_sensor.idle()
@@ -127,5 +116,5 @@ datapoint = DataPoint(timestamp=timestamp, pm10=mean_data.pm10, pm25=mean_data.p
                       humidity=measurements.rel_humidity, voltage=measurements.voltage, duration=time_alive, version=VERSION)
 
 persistence.store_datapoint(datapoint)
-# sleep for 10 minutes - 5 seconds :)
-tear_down(alive_timer, pwmchannel, 595*1000)
+# sleep for 10 minutes - 2 seconds :)
+tear_down(alive_timer, 598*1000)

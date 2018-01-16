@@ -1,3 +1,8 @@
+0.5.0 - 2018/01/16:
+  * Update for LoPy4: change PMS5003 pins because old ones are partially used by LoRa chip
+  * Remove LED PWM code (temporarily?) beacuse LoPy4 crashed there...
+  * Sleep for 598 seconds because 595 was a bit too short
+
 0.4.1 - 2017/12/07: 
   * Fix reading datapoints from file
   * Fix computing mean datapoint
