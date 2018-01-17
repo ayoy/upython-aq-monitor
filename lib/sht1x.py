@@ -44,13 +44,14 @@ class SHT1X:
         self.vcc = vcc
 
         self.gnd.mode(Pin.OUT)
-        self.gnd.mode(Pin.PULL_DOWN)
-        self.vcc.mode(Pin.PULL_UP)
         self.vcc.mode(Pin.OUT)
         self.sck.mode(Pin.OUT)
-        self.sck.pull(None)
         self.data.mode(Pin.OPEN_DRAIN)
-        self.data.pull(Pin.PULL_UP)
+
+        self.gnd.pull(Pin.PULL_DOWN)
+        self.vcc.pull(Pin.PULL_UP)
+        self.sck.pull(Pin.PULL_DOWN)
+        self.data.pull(None)
 
         self.sleep()
 
@@ -76,7 +77,7 @@ class SHT1X:
         humidity = -2.0468 + 0.0367*readout - 1.5955e-6*readout**2
         if temperature != 25:
             humidity += (temperature - 25) * (0.01 + 8e-5 * readout)
-        return humidity
+        return min(humidity, 100)
 
 
     def __send_command(self, command):
