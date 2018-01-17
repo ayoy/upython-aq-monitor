@@ -22,7 +22,7 @@ def tear_down(timer, initial_time_remaining):
     elapsed_ms = int(timer.read()*1000)
     timer.reset()
     time_remaining = initial_time_remaining - elapsed_ms
-    print('sleeping for {}ms'.format(time_remaining))
+    print('sleeping for {}ms ({})'.format(time_remaining, utime.time()))
 
     deepsleep_pin = Pin('P10', mode=Pin.IN, pull=Pin.PULL_UP)
     machine.pin_deepsleep_wakeup(pins=[deepsleep_pin], mode=machine.WAKEUP_ALL_LOW, enable_pull=True)
@@ -68,6 +68,8 @@ def th_func(data):
         setup_rtc()
         wlan.deinit()
         pycom.nvs_set('rtc_synced', 1)
+    else:
+        print('RTC synced: {}'.format(utime.time()))
 
     lock.release()
 
