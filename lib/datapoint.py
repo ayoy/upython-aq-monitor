@@ -10,10 +10,13 @@ class DataPoint:
         if len(required) > 0:
             raise ValueError
 
-    def to_influx(self):
-        return 'aqi,indoor=1,version={} pm25={},pm10={},temperature={},humidity={},voltage={},duration={} {}000000000' \
+    def to_influx(self, include_timestamp=True):
+        data = 'aqi,indoor=1,version={} pm25={},pm10={},temperature={},humidity={},voltage={},duration={}' \
             .format(self.version, self.pm25, self.pm10, self.temperature, self.humidity, \
-            self.voltage, self.duration, self.timestamp)
+            self.voltage, self.duration)
+        if include_timestamp is True:
+            data += ' {}000000000'.format(self.timestamp)
+        return data
 
     def to_thingspeak(self):
         return 'field1={}&field2={}&field3={}&field4={}&field5={}&field6={}' \
