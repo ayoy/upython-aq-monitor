@@ -12,7 +12,7 @@ from datapoint import DataPoint
 
 pycom.heartbeat(False)
 
-VERSION = '0.5.0'
+VERSION = '0.5.1'
 
 alive_timer = Timer.Chrono()
 alive_timer.start()
@@ -61,15 +61,16 @@ def th_func(data):
     finally:
         humid.sleep()
 
-    rtc_synced = pycom.nvs_get('rtc_synced')
-    if rtc_synced is None:
-        print ('RTC not synced, syncing now')
-        wlan = connect_to_WLAN()
-        setup_rtc()
-        wlan.deinit()
-        pycom.nvs_set('rtc_synced', 1)
-    else:
-        print('RTC synced: {}'.format(utime.time()))
+    # TODO: Due to LoPy4 workaround, RTC is not required
+    # rtc_synced = pycom.nvs_get('rtc_synced')
+    # if rtc_synced is None:
+    #     print ('RTC not synced, syncing now')
+    #     wlan = connect_to_WLAN()
+    #     setup_rtc()
+    #     wlan.deinit()
+    #     pycom.nvs_set('rtc_synced', 1)
+    # else:
+    #     print('RTC synced: {}'.format(utime.time()))
 
     lock.release()
 

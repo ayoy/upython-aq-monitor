@@ -103,7 +103,8 @@ def __save_datapoints_to_file(datapoints):
 
 def __send_datapoints(datapoints):
     wlan = connect_to_WLAN()
-    setup_rtc()
+    # TODO: Due to LoPy4 workaround, RTC is not required
+    # setup_rtc()
     success = send_to_thingspeak(datapoints) and send_to_influx(datapoints)
     wlan.deinit()
     return success

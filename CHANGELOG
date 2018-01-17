@@ -1,12 +1,18 @@
+0.5.1 - 2018/01/16:
+  * More LoPy4 issues: RTC state not kept when running on battery
+  * Report data to influx the same way as to thingspeak, i.e. mean data from 6 consecutive
+    measurements, with no timestamp
+  * Temporarily removed RTC code that is not needed as we don't send timestamps
+
 0.5.0 - 2018/01/16:
   * Update for LoPy4: change PMS5003 pins because old ones are partially used by LoRa chip
   * Remove LED PWM code (temporarily?) beacuse LoPy4 crashed there...
   * Sleep for 598 seconds because 595 was a bit too short
 
-0.4.1 - 2017/12/07: 
+0.4.1 - 2017/12/07:
   * Fix reading datapoints from file
   * Fix computing mean datapoint
-  * Use wake by button to enable debug mode (enable WiFi and exit) 
+  * Use wake by button to enable debug mode (enable WiFi and exit)
   * Sleep for 595 seconds (5s to compensate for boot-up time)
 
 0.4.0: Send data to Thingspeak using MQTT and measure outside T/RH
