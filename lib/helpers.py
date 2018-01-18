@@ -1,9 +1,9 @@
 import utime
-import time
 import machine
 import pycom
 from network import WLAN
 from keychain import *
+from ds3231 import DS3231
 
 def connect_to_WLAN():
     wlan = WLAN(mode=WLAN.STA)
@@ -24,8 +24,8 @@ def setup_rtc():
     rtc = machine.RTC()
     rtc.ntp_sync("pool.ntp.org")
     while not rtc.synced():
-        utime.sleep_ms(500)
-    time.timezone(3600)
+        utime.sleep_ms(100)
+    utime.timezone(3600)
 
 
 def flash_led(color, n=1):

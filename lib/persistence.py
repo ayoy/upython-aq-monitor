@@ -28,6 +28,7 @@ def __filename():
 
 
 def send_datapoints_adhoc():
+    sent = False
     queue_size = __queue_size()
     if queue_size > 0:
         try:
@@ -43,6 +44,7 @@ def send_datapoints_adhoc():
             if __send_data(datapoints):
                 cleanup()
                 flash_led(0x008800, 10)
+                sent = True
             else:
                 flash_led(0x880000, 10)
 
@@ -54,8 +56,11 @@ def send_datapoints_adhoc():
         # no data to send
         flash_led(0x000088, 1)
 
+    return sent
+
 
 def store_datapoint(datapoint):
+    sent = False
     queue_size = __queue_size()
     print('queue size: {}'.format(queue_size))
     if queue_size >= __max_queue_size:
@@ -75,6 +80,7 @@ def store_datapoint(datapoint):
             if __send_datapoints(datapoints):
                 flash_led(0x008800, 3)
                 cleanup()
+                sent = True
             else:
                 flash_led(0x880000, 3)
                 with open(__filename(), 'w') as data_file:
@@ -93,6 +99,8 @@ def store_datapoint(datapoint):
         flash_led(0x888888)
         pycom.nvs_set('queue_size', queue_size+1)
 
+    return sent
+
 
 def __save_datapoints_to_file(datapoints):
     with open(__filename(), 'a') as data_file:
@@ -103,8 +111,7 @@ def __save_datapoints_to_file(datapoints):
 
 def __send_datapoints(datapoints):
     wlan = connect_to_WLAN()
-    # TODO: Due to LoPy4 workaround, RTC is not required
-    # setup_rtc()
+    setup_rtc()
     success = send_to_thingspeak(datapoints) and send_to_influx(datapoints)
     wlan.deinit()
     return success

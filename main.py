@@ -9,10 +9,12 @@ from sht1x import SHT1X
 from pms5003 import PMS5003, PMSData
 import persistence
 from datapoint import DataPoint
+from ds3231 import DS3231
 
 pycom.heartbeat(False)
 
-VERSION = '0.5.1'
+VERSION = '0.6.0'
+
 
 alive_timer = Timer.Chrono()
 alive_timer.start()
@@ -22,11 +24,22 @@ def tear_down(timer, initial_time_remaining):
     elapsed_ms = int(timer.read()*1000)
     timer.reset()
     time_remaining = initial_time_remaining - elapsed_ms
-    print('sleeping for {}ms ({})'.format(time_remaining, utime.time()))
+    print('sleeping for {}ms ({})'.format(time_remaining, ertc.get_time()))
 
-    deepsleep_pin = Pin('P10', mode=Pin.IN, pull=Pin.PULL_UP)
-    machine.pin_deepsleep_wakeup(pins=[deepsleep_pin], mode=machine.WAKEUP_ALL_LOW, enable_pull=True)
+    # deepsleep_pin = Pin('P10', mode=Pin.IN, pull=Pin.PULL_UP)
+    # machine.pin_deepsleep_wakeup(pins=[deepsleep_pin], mode=machine.WAKEUP_ALL_LOW, enable_pull=True)
     machine.deepsleep(time_remaining)
+
+
+######################
+#  External RTC
+######################
+ertc_vcc = Pin(Pin.exp_board.G6, mode=Pin.OUT, pull=Pin.PULL_UP)
+ertc_gnd = Pin(Pin.exp_board.G10, mode=Pin.OUT, pull=Pin.PULL_DOWN)
+ertc_vcc(True)
+ertc_gnd(False)
+ertc = DS3231(0, (Pin.exp_board.G7, Pin.exp_board.G8))
+ertc.get_time(True)
 
 
 ######################
@@ -48,7 +61,7 @@ def th_func(data):
 
     data.voltage = adc.vbatt()
 
-    humid = SHT1X(gnd=Pin.exp_board.G10, sck=Pin.exp_board.G9, data=Pin.exp_board.G8, vcc=Pin.exp_board.G7)
+    humid = SHT1X(gnd=Pin.exp_board.G5, sck=Pin.exp_board.G15, data=Pin.exp_board.G16, vcc=Pin.exp_board.G22) #gnd not used
     humid.wake_up()
     try:
         data.temperature = humid.temperature()
@@ -61,16 +74,16 @@ def th_func(data):
     finally:
         humid.sleep()
 
-    # TODO: Due to LoPy4 workaround, RTC is not required
-    # rtc_synced = pycom.nvs_get('rtc_synced')
-    # if rtc_synced is None:
-    #     print ('RTC not synced, syncing now')
-    #     wlan = connect_to_WLAN()
-    #     setup_rtc()
-    #     wlan.deinit()
-    #     pycom.nvs_set('rtc_synced', 1)
-    # else:
-    #     print('RTC synced: {}'.format(utime.time()))
+    rtc_synced = pycom.nvs_get('rtc_synced')
+    if rtc_synced is None:
+        print ('RTC not synced, syncing now')
+        wlan = connect_to_WLAN()
+        setup_rtc()
+        ertc.save_time()
+        wlan.deinit()
+        pycom.nvs_set('rtc_synced', 1)
+    else:
+        print('RTC synced: {}'.format(ertc.get_time()))
 
     lock.release()
 
@@ -78,10 +91,10 @@ def th_func(data):
 _thread.start_new_thread(th_func, (measurements,))
 ######################
 
-en = Pin(Pin.exp_board.G6, mode=Pin.OUT, pull=Pin.PULL_DOWN) # MOSFET gate
+en = Pin('P10', mode=Pin.OUT, pull=Pin.PULL_DOWN) # MOSFET gate
 en(True)
 
-aq_sensor = PMS5003(Pin.exp_board.G15, Pin.exp_board.G24, Pin.exp_board.G11, Pin.exp_board.G16)
+aq_sensor = PMS5003(Pin.exp_board.G1, Pin.exp_board.G24, Pin.exp_board.G11, Pin.exp_board.G23)
 aq_sensor.wake_up()
 frames = aq_sensor.read_frames(5)
 aq_sensor.idle()
@@ -118,6 +131,9 @@ print('cPM25: {}, cPM10: {}, PM25: {}, PM10: {}, temp: {}, rh: {}, Vbat: {}, tim
 datapoint = DataPoint(timestamp=timestamp, pm10=mean_data.pm10, pm25=mean_data.pm25, temperature=measurements.temperature,
                       humidity=measurements.rel_humidity, voltage=measurements.voltage, duration=time_alive, version=VERSION)
 
-persistence.store_datapoint(datapoint)
+# store datapoints, and if sent, the RTC was synced so update the external RTC
+if persistence.store_datapoint(datapoint) is True:
+    ertc.save_time()
+
 # sleep for 10 minutes - 2 seconds :)
-tear_down(alive_timer, 598*1000)
+tear_down(alive_timer, 597*1000)

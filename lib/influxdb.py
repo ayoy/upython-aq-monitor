@@ -3,11 +3,9 @@ from datapoint import DataPoint
 from helpers import *
 
 def send_to_influx(datapoints):
-    # Workaround for LoPy4 that fails to keep up RTC on battery
-    # compute mean datapoint and send it without timestamp
-    # data = '\n'.join(d.to_influx() for d in datapoints)
-    mean_data = DataPoint.mean(datapoints)
-    data = mean_data.to_influx(include_timestamp=False)
+    data = '\n'.join(d.to_influx() for d in datapoints)
+    # mean_data = DataPoint.mean(datapoints)
+    # data = mean_data.to_influx(include_timestamp=False)
 
     print('sending data\n{}'.format(data))
     influx_url = 'http://rpi.local:8086/write?db=mydb'

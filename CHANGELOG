@@ -1,3 +1,7 @@
+0.6.0 - 2018/01/18:
+  * Add external RTC module and bring back 10-minute granularity for influx data
+  * Reorganize pin connections, almost all pins are now used...
+
 0.5.1 - 2018/01/16:
   * More LoPy4 issues: RTC state not kept when running on battery
   * Report data to influx the same way as to thingspeak, i.e. mean data from 6 consecutive

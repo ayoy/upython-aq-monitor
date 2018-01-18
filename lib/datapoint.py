@@ -44,8 +44,8 @@ class DataPoint:
         return cls(
             pm10 = mean_pm10/len(datapoints),
             pm25 = mean_pm25/len(datapoints),
-            temperature = mean_temperature/valid_temp_datapoints,
-            humidity = mean_humidity/valid_temp_datapoints,
+            temperature = -1 if valid_temp_datapoints == 0 else mean_temperature/valid_temp_datapoints,
+            humidity = -1 if valid_temp_datapoints == 0 else mean_humidity/valid_temp_datapoints,
             duration = mean_duration/len(datapoints),
             voltage = datapoints[-1].voltage,
             version = datapoints[-1].version,

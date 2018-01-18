@@ -62,7 +62,7 @@ class PMS5003:
         u = self.uart.any()
         if u < byte_count:
             alarm = machine.Timer.Alarm(idle_timer, 3)
-            print('waiting for data {}'.format(str(u)))
+            # print('waiting for data {}'.format(str(u)))
         while u < byte_count:
             u = self.uart.any()
             # 32*8*1000/9600 (32 bytes @9600kbps)
@@ -73,7 +73,7 @@ class PMS5003:
         except AttributeError:
             pass
         pycom.rgbled(0x000000)
-        print('data ready {}'.format(str(self.uart.any())))
+        # print('data ready {}'.format(str(self.uart.any())))
 
 
 class PMSData:
