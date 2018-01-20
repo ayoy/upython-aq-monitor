@@ -13,7 +13,7 @@ from ds3231 import DS3231
 
 pycom.heartbeat(False)
 
-VERSION = '0.6.0'
+VERSION = '0.7.0'
 
 
 alive_timer = Timer.Chrono()
@@ -34,12 +34,7 @@ def tear_down(timer, initial_time_remaining):
 ######################
 #  External RTC
 ######################
-ertc_vcc = Pin(Pin.exp_board.G6, mode=Pin.OUT, pull=Pin.PULL_UP)
-ertc_gnd = Pin(Pin.exp_board.G10, mode=Pin.OUT, pull=Pin.PULL_DOWN)
-ertc_vcc(True)
-ertc_gnd(False)
-ertc = DS3231(0, (Pin.exp_board.G7, Pin.exp_board.G8))
-ertc.get_time(True)
+ertc = DS3231(0, (Pin.module.P21, Pin.module.P20))
 
 
 ######################
@@ -57,11 +52,15 @@ lock = _thread.allocate_lock()
 
 def th_func(data):
     global lock
+    global ertc
+
     lock.acquire()
+    ertc.get_time(True)
 
     data.voltage = adc.vbatt()
 
-    humid = SHT1X(gnd=Pin.exp_board.G5, sck=Pin.exp_board.G15, data=Pin.exp_board.G16, vcc=Pin.exp_board.G22) #gnd not used
+                    # gnd not used
+    humid = SHT1X(gnd=Pin.module.P3, sck=Pin.module.P23, data=Pin.module.P22, vcc=Pin.module.P19)
     humid.wake_up()
     try:
         data.temperature = humid.temperature()
@@ -91,10 +90,10 @@ def th_func(data):
 _thread.start_new_thread(th_func, (measurements,))
 ######################
 
-en = Pin('P10', mode=Pin.OUT, pull=Pin.PULL_DOWN) # MOSFET gate
+en = Pin('P4', mode=Pin.OUT, pull=Pin.PULL_DOWN) # MOSFET gate
 en(True)
 
-aq_sensor = PMS5003(Pin.exp_board.G1, Pin.exp_board.G24, Pin.exp_board.G11, Pin.exp_board.G23)
+aq_sensor = PMS5003(Pin.module.P8, Pin.module.P10, Pin.module.P11, Pin.module.P9)
 aq_sensor.wake_up()
 frames = aq_sensor.read_frames(5)
 aq_sensor.idle()
@@ -136,4 +135,4 @@ if persistence.store_datapoint(datapoint) is True:
     ertc.save_time()
 
 # sleep for 10 minutes - 2 seconds :)
-tear_down(alive_timer, 597*1000)
+tear_down(alive_timer,598*1000)

@@ -1,3 +1,7 @@
+0.7.0 - 2018/01/20:
+  * Move to a dedicated PCB
+  * Battery voltage measurement not included yet
+
 0.6.0 - 2018/01/18:
   * Add external RTC module and bring back 10-minute granularity for influx data
   * Reorganize pin connections, almost all pins are now used...
