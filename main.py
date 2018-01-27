@@ -10,6 +10,7 @@ from pms5003 import PMS5003, PMSData
 import persistence
 from datapoint import DataPoint
 from ds3231 import DS3231
+import lora_node
 
 pycom.heartbeat(False)
 
@@ -129,6 +130,13 @@ print('cPM25: {}, cPM10: {}, PM25: {}, PM10: {}, temp: {}, rh: {}, Vbat: {}, tim
 
 datapoint = DataPoint(timestamp=timestamp, pm10=mean_data.pm10, pm25=mean_data.pm25, temperature=measurements.temperature,
                       humidity=measurements.rel_humidity, voltage=measurements.voltage, duration=time_alive, version=VERSION)
+
+if not lora_node.connect_to_LoRa():
+    print('Not connected to LoRa')
+else:
+    lora_node.send_bytes(b'a')
+
+
 
 # store datapoints, and if sent, the RTC was synced so update the external RTC
 if persistence.store_datapoint(datapoint) is True:
