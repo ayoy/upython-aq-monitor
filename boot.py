@@ -5,10 +5,7 @@ from network import Bluetooth, WLAN
 from machine import WDT
 from helpers import *
 
-bluetooth = Bluetooth()
-bluetooth.deinit()
-wlan = WLAN(mode=WLAN.STA)
-wlan.deinit()
+pycom.wifi_on_boot(False)
 
 ########################################
 ## Handle wake by button to enter debug mode
@@ -23,7 +20,7 @@ else:
     if machine.reset_cause() not in [machine.DEEPSLEEP_RESET, machine.SOFT_RESET, machine.WDT_RESET]:
         print('hard reset, erasing NVS')
         pycom.nvs_erase_all()
-        persistence.cleanup()
+        # persistence.cleanup()
     else:
         print('soft/deepsleep reset, enabling watchdog timer')
         watchdog_timer = WDT(timeout=30000)

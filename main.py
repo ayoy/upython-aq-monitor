@@ -9,12 +9,11 @@ from sht1x import SHT1X
 from pms5003 import PMS5003, PMSData
 import persistence
 from datapoint import DataPoint
-from ds3231 import DS3231
 import lora_node
 
 pycom.heartbeat(False)
 
-VERSION = '0.7.0'
+VERSION = '0.8.0'
 
 
 alive_timer = Timer.Chrono()
@@ -25,17 +24,11 @@ def tear_down(timer, initial_time_remaining):
     elapsed_ms = int(timer.read()*1000)
     timer.reset()
     time_remaining = initial_time_remaining - elapsed_ms
-    print('sleeping for {}ms ({})'.format(time_remaining, ertc.get_time()))
+    print('sleeping for {}ms'.format(time_remaining))
 
     # deepsleep_pin = Pin('P10', mode=Pin.IN, pull=Pin.PULL_UP)
     # machine.pin_deepsleep_wakeup(pins=[deepsleep_pin], mode=machine.WAKEUP_ALL_LOW, enable_pull=True)
     machine.deepsleep(time_remaining)
-
-
-######################
-#  External RTC
-######################
-ertc = DS3231(0, (Pin.module.P21, Pin.module.P20))
 
 
 ######################
@@ -53,10 +46,8 @@ lock = _thread.allocate_lock()
 
 def th_func(data):
     global lock
-    global ertc
 
     lock.acquire()
-    ertc.get_time(True)
 
     data.voltage = adc.vbatt()
 
@@ -73,18 +64,6 @@ def th_func(data):
         pass
     finally:
         humid.sleep()
-
-    rtc_synced = pycom.nvs_get('rtc_synced')
-    if rtc_synced is None:
-        print ('RTC not synced, syncing now')
-        wlan = connect_to_WLAN()
-        setup_rtc()
-        ertc.save_time()
-        wlan.deinit()
-        pycom.nvs_set('rtc_synced', 1)
-    else:
-        print('RTC synced: {}'.format(ertc.get_time()))
-
     lock.release()
 
 
@@ -131,16 +110,10 @@ print('cPM25: {}, cPM10: {}, PM25: {}, PM10: {}, temp: {}, rh: {}, Vbat: {}, tim
 datapoint = DataPoint(timestamp=timestamp, pm10=mean_data.pm10, pm25=mean_data.pm25, temperature=measurements.temperature,
                       humidity=measurements.rel_humidity, voltage=measurements.voltage, duration=time_alive, version=VERSION)
 
-if not lora_node.connect_to_LoRa():
-    print('Not connected to LoRa')
+if lora_node.send_bytes(datapoint.to_bytes()):
+    flash_led(0x888888)
 else:
-    lora_node.send_bytes(b'a')
-
-
-
-# store datapoints, and if sent, the RTC was synced so update the external RTC
-if persistence.store_datapoint(datapoint) is True:
-    ertc.save_time()
+    flash_led(0x880000)
 
 # sleep for 10 minutes - 2 seconds :)
 tear_down(alive_timer,598*1000)

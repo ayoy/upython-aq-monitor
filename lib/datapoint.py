@@ -36,14 +36,13 @@ class DataPoint:
         # version - str
 
         payload = b''
-        payload += self.pm10.to_bytes(2, 'little')
-        payload += self.pm25.to_bytes(2, 'little')
-        payload += self.pm10.to_bytes(2, 'little')
+        payload += int(self.pm10).to_bytes(2, 'little')
+        payload += int(self.pm25).to_bytes(2, 'little')
         temp_k = self.temperature + 273.15
         payload += int(temp_k*100).to_bytes(2, 'little')
         payload += int(self.humidity*100).to_bytes(2, 'little')
-        payload += self.voltage.to_bytes(2, 'little')
-        payload += int(self.duration*1000).to_bytes(2, 'little')
+        payload += int(self.voltage).to_bytes(2, 'little')
+        payload += int(self.duration).to_bytes(2, 'little')
         payload += self.version
 
         return payload

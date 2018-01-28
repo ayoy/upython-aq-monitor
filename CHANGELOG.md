@@ -1,3 +1,7 @@
+0.8.0 - 2018/01/28:
+  * Use LoRaWAN via TTN instead of WiFi
+  * Remove RTC and persistence layer to send data after every measurement
+
 0.7.0 - 2018/01/20:
   * Move to a dedicated PCB
   * Battery voltage measurement not included yet
