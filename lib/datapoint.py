@@ -10,6 +10,7 @@ class DataPoint:
         if len(required) > 0:
             raise ValueError
 
+
     def to_influx(self, include_timestamp=True):
         data = 'aqi,indoor=1,version={} pm25={},pm10={},temperature={},humidity={},voltage={},duration={}' \
             .format(self.version, self.pm25, self.pm10, self.temperature, self.humidity, \
@@ -18,10 +19,35 @@ class DataPoint:
             data += ' {}000000000'.format(self.timestamp)
         return data
 
+
     def to_thingspeak(self):
         return 'field1={}&field2={}&field3={}&field4={}&field5={}&field6={}' \
             .format(self.pm10, self.pm25, self.temperature, self.humidity, self.voltage, \
             self.duration)
+
+
+    def to_bytes(self):
+        # pm10 [ug/m] - int - 2b
+        # pm25 [ug/m] - int - 2b
+        # temp [K] - int - 2b
+        # humidity [%/10] - int - 2b
+        # voltage (mv) - int - 2b
+        # duration (ms) - int - 2b
+        # version - str
+
+        payload = b''
+        payload += self.pm10.to_bytes(2, 'little')
+        payload += self.pm25.to_bytes(2, 'little')
+        payload += self.pm10.to_bytes(2, 'little')
+        temp_k = self.temperature + 273.15
+        payload += int(temp_k*100).to_bytes(2, 'little')
+        payload += int(self.humidity*100).to_bytes(2, 'little')
+        payload += self.voltage.to_bytes(2, 'little')
+        payload += int(self.duration*1000).to_bytes(2, 'little')
+        payload += self.version
+
+        return payload
+
 
     @classmethod
     def mean(cls, datapoints):
