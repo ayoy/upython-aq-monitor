@@ -46,7 +46,7 @@ def send_bytes(payload):
     # set the LoRaWAN data rate
     s.setsockopt(socket.SOL_LORA, socket.SO_DR, 5)
     # make the socket blocking
-    s.setblocking(False)
+    s.setblocking(True)
 
     print('Sending bytes: {}'.format(payload))
     s.send(payload)
