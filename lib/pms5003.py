@@ -20,8 +20,8 @@ class PMS5003:
         self.en(True)
         self.rst(True)
         self.uart.init(pins=(self.tx, self.rx))
-        # sleep for 7 seconds to initialize the sensor properly
-        utime.sleep_ms(7000)
+        # sleep for 28 seconds to initialize the sensor properly
+        utime.sleep_ms(28000)
 
 
     def idle(self):

@@ -13,7 +13,7 @@ import lora_node
 
 pycom.heartbeat(False)
 
-VERSION = '0.8.0'
+VERSION = '0.9.0'
 
 
 alive_timer = Timer.Chrono()
@@ -115,5 +115,5 @@ if lora_node.send_bytes(datapoint.to_bytes()):
 else:
     flash_led(0x880000)
 
-# sleep for 10 minutes - 2 seconds :)
-tear_down(alive_timer,599*1000)
+# sleep for 30 minutes + 2 seconds :)
+tear_down(alive_timer, 1802*1000)

@@ -1,3 +1,8 @@
+0.9.0 - 2018/02/20:
+--------------------
+  * Measure data twice per hour (every 30 minutes)
+  * Wait for 28 seconds with measurement to improve reliability
+
 0.8.0 - 2018/01/28:
 --------------------
   * Use LoRaWAN via TTN instead of WiFi
