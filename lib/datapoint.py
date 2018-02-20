@@ -30,7 +30,7 @@ class DataPoint:
         # pm10 [ug/m] - int - 2b
         # pm25 [ug/m] - int - 2b
         # temp [K] - int - 2b
-        # humidity [%/10] - int - 2b
+        # humidity [%] - int - 2b
         # voltage (mv) - int - 2b
         # duration (ms) - int - 2b
         # version - str

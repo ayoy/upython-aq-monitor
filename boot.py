@@ -18,8 +18,8 @@ else:
     watchdog_timer = None
 
     if machine.reset_cause() not in [machine.DEEPSLEEP_RESET, machine.SOFT_RESET, machine.WDT_RESET]:
-        print('hard reset, erasing NVS')
-        pycom.nvs_erase_all()
+        print('hard reset, (NOT) erasing NVS')
+        # pycom.nvs_erase_all()
         # persistence.cleanup()
     else:
         print('soft/deepsleep reset, enabling watchdog timer')

@@ -116,4 +116,4 @@ else:
     flash_led(0x880000)
 
 # sleep for 10 minutes - 2 seconds :)
-tear_down(alive_timer,598*1000)
+tear_down(alive_timer,599*1000)
