@@ -3,7 +3,6 @@ import machine
 import pycom
 from network import WLAN
 from keychain import *
-from ds3231 import DS3231
 
 def connect_to_WLAN():
     wlan = WLAN(mode=WLAN.STA)
