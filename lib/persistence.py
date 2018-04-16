@@ -1,6 +1,5 @@
 import uos
 import pycom
-import urequests
 import utime
 import ujson
 from datapoint import DataPoint

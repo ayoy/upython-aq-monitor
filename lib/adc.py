@@ -1,6 +1,5 @@
 from machine import ADC
 numADCreadings = const(1000)
-Vmax = const(4440)
 
 def vbatt():
     adc = ADC(0)
@@ -23,7 +22,7 @@ def vbatt():
     print("Mean of ADC voltage readings (0-%dmV) = %15.13f" % (apin.value_to_voltage(4095), apin.value_to_voltage(int(meanADC))))
     print("Variance of ADC readings = %15.13f" % varianceADC)
     print("10**6*Variance/(Mean**2) of ADC readings = %15.13f" % ((varianceADC*10**6)//(meanADC**2)))
-    vbatt = (apin.value_to_voltage(int(meanADC))+65)*147/47
+    vbatt = (apin.value_to_voltage(int(meanADC)))*147/47
     adc.deinit()
     apin.deinit()
     return vbatt

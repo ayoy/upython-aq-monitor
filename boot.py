@@ -23,6 +23,6 @@ else:
         # persistence.cleanup()
     else:
         print('soft/deepsleep reset, enabling watchdog timer')
-        # watchdog_timer = WDT(timeout=60000)
+        watchdog_timer = WDT(timeout=60000)
 
     machine.main('main.py')

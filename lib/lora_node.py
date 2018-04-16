@@ -4,31 +4,33 @@ import binascii
 import struct
 import time
 import machine
-from keychain import NETWORK_KEY, APP_KEY, DEVICE_ADDRES
-
+import pycom
+from keychain import NETWORK_KEY, APP_SESSION_KEY, DEVICE_ADDRES
+from keychain import APP_EUI, APP_KEY
 
 def _connect_to_LoRaWAN(lora):
     # create an ABP authentication params
-    dev_addr = struct.unpack(">l", binascii.unhexlify(DEVICE_ADDRES.replace(' ','')))[0]
-    nwk_swkey = binascii.unhexlify(NETWORK_KEY.replace(' ',''))
-    app_swkey = binascii.unhexlify(APP_KEY.replace(' ',''))
+    # dev_addr = struct.unpack(">l", binascii.unhexlify(DEVICE_ADDRES))[0]
+    # nwk_swkey = binascii.unhexlify(NETWORK_KEY)
+    # app_swkey = binascii.unhexlify(APP_SESSION_KEY)
+    #
+    # # join a network using ABP (Activation By Personalization)
+    # lora.join(activation=LoRa.ABP, auth=(dev_addr, nwk_swkey, app_swkey))
 
-    # remove all the non-default channels
-    for i in range(3, 16):
-        lora.remove_channel(i)
+    app_eui = binascii.unhexlify(APP_EUI)
+    app_key = binascii.unhexlify(APP_KEY)
+    # join a network using OTAA (Over the Air activation)
+    lora.join(activation=LoRa.OTAA, auth=(app_eui, app_key), timeout=0)
+    print('Sending OTAA join...')
 
-    # set the 3 default channels to the same frequency
-    lora.add_channel(0, frequency=868100000, dr_min=0, dr_max=5)
-    lora.add_channel(1, frequency=868100000, dr_min=0, dr_max=5)
-    lora.add_channel(2, frequency=868100000, dr_min=0, dr_max=5)
-
-    # join a network using ABP (Activation By Personalization)
-    lora.join(activation=LoRa.ABP, auth=(dev_addr, nwk_swkey, app_swkey))
-
+    # Loop until joined
+    while not lora.has_joined():
+        machine.idle()
+    print('... joined!')
 
 def send_bytes(payload):
     # initialize LoRa in LORAWAN mode.
-    lora = LoRa(mode=LoRa.LORAWAN)
+    lora = LoRa(mode=LoRa.LORAWAN, region=LoRa.EU868, power_mode=LoRa.TX_ONLY)
     if machine.reset_cause() in [machine.DEEPSLEEP_RESET, machine.SOFT_RESET, machine.WDT_RESET]:
         print('Restoring LoRa state from NVS')
         lora.nvram_restore()
@@ -47,6 +49,7 @@ def send_bytes(payload):
     s.setsockopt(socket.SOL_LORA, socket.SO_DR, 5)
     # make the socket blocking
     s.setblocking(True)
+    s.bind(1)
 
     print('Sending bytes: {}'.format(payload))
     s.send(payload)
@@ -56,5 +59,6 @@ def send_bytes(payload):
     #     print('Received: {}, on port: {}'.format(rx, port))
 
     s.close()
+    print('Payload sent')
     lora.nvram_save()
     return True

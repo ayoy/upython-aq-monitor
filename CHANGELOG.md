@@ -1,3 +1,9 @@
+1.0.0 - 2018/04/16:
+--------------------
+  * Smog-o-Meter 1.0
+  * Add e-paper display
+  * Use OTAA for LoRaWAN
+
 0.9.0 - 2018/02/20:
 --------------------
   * Measure data twice per hour (every 30 minutes)
