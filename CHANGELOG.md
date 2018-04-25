@@ -1,3 +1,7 @@
+1.0.1 - 2018/04/25:
+--------------------
+  * Update e-paper layout and use larger font (menlo24)
+
 1.0.0 - 2018/04/16:
 --------------------
   * Smog-o-Meter 1.0

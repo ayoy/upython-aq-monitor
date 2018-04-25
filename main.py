@@ -13,7 +13,7 @@ import lora_node
 
 pycom.heartbeat(False)
 
-VERSION = '1.0.0'
+VERSION = '1.0.1'
 
 adc_dht_en = Pin('P3', mode=Pin.OUT, pull=Pin.PULL_DOWN) # MOSFET gate
 
@@ -121,15 +121,10 @@ if lora_node.send_bytes(datapoint.to_bytes()):
 else:
     flash_led(0x880000)
 
-# import imagedata
-# import fontx
-# import font12
-# import font16
-# import font20
-# import monaco12
 import epd1in54b
 import monaco12
 import monaco16_pms as monaco16
+import menlo24
 
 mosi = Pin('P22')
 clk = Pin('P21')
@@ -146,94 +141,58 @@ fb_size = int(epd.width * epd.height / 8)
 frame_black = bytearray(fb_size)
 frame_red = bytearray(fb_size)
 
-# epd.display_string_at(frame_black, 0, 10, "PM10: {} ug/m^3".format(int(datapoint.pm10)), monaco16, epd1in54b.COLORED)
-# epd.display_string_at(frame_black, 0, 26, "PM25: {} ug/m^3".format(int(datapoint.pm25)), monaco16, epd1in54b.COLORED)
 pm10_label = "PM10"
 pm25_label = "PM2.5"
-pm10_value = "{}\x80\x81".format(int(datapoint.pm10))
-pm25_value = "{}\x80\x81".format(int(datapoint.pm25))
-t_label = "Temperature"
-t_value = "%.1f^C" % datapoint.temperature
+pm10_value = "{}\x80".format(int(datapoint.pm10))
+pm25_value = "{}\x80".format(int(datapoint.pm25))
+t_label = "Temp."
+t_value = "%.1f\x81\x82" % datapoint.temperature
 rh_label = "Humidity"
 rh_value = "%d%%" % datapoint.humidity
 battery_value = "battery: %dmV" % datapoint.voltage
 epd.clear_frame(frame_black, frame_red)
 
-if datapoint.pm10 > 100:
-    epd.draw_filled_rectangle(frame_red, 0, 0, epd.width//2-1, 57, epd1in54b.COLORED)
-    epd.display_string_at(frame_red,
-                          epd.width//4 - len(pm10_label)*monaco16.width//2, 10,
-                          pm10_label, monaco16,
-                          epd1in54b.UNCOLORED)
-    epd.display_string_at(frame_red,
-                          epd.width//4 - len(pm10_value)*monaco16.width//2, 30,
-                          pm10_value, monaco16,
-                          epd1in54b.UNCOLORED)
-    epd.display_string_at(frame_black,
-                          epd.width//4 - len(pm10_label)*monaco16.width//2, 10,
-                          pm10_label, monaco16,
-                          epd1in54b.COLORED)
-elif datapoint.pm10 > 50:
-    epd.display_string_at(frame_black,
-                          epd.width//4 - len(pm10_label)*monaco16.width//2, 10,
-                          pm10_label, monaco16,
-                          epd1in54b.COLORED)
-    epd.display_string_at(frame_red,
-                          epd.width//4 - len(pm10_value)*monaco16.width//2, 30,
-                          pm10_value, monaco16,
-                          epd1in54b.COLORED)
-else:
-    epd.display_string_at(frame_black,
-                          epd.width//4 - len(pm10_label)*monaco16.width//2, 10,
-                          pm10_label, monaco16,
-                          epd1in54b.COLORED)
-    epd.display_string_at(frame_black,
-                          epd.width//4 - len(pm10_value)*monaco16.width//2, 30,
-                          pm10_value, monaco16,
-                          epd1in54b.COLORED)
+epd.display_string_at(frame_black,
+                      epd.width//4 - len(pm10_label)*monaco16.width//2, 25,
+                      pm10_label, monaco16,
+                      epd1in54b.COLORED)
+epd.display_string_at(frame_black,
+                      epd.width//4 - len(pm10_value)*menlo24.width//2, 45,
+                      pm10_value, menlo24,
+                      epd1in54b.COLORED)
 
-if datapoint.pm25 > 50:
-    epd.draw_filled_rectangle(frame_red, epd.width//2+1, 0, epd.width-1, 57, epd1in54b.COLORED)
-    epd.display_string_at(frame_red,
-                          epd.width//4*3 - len(pm25_label)*monaco16.width//2, 10,
-                          pm25_label, monaco16,
-                          epd1in54b.UNCOLORED)
-    epd.display_string_at(frame_red,
-                          epd.width//4*3 - len(pm25_value)*monaco16.width//2, 30,
-                          pm25_value, monaco16,
-                          epd1in54b.UNCOLORED)
-    epd.display_string_at(frame_black,
-                          epd.width//4*3 - len(pm25_label)*monaco16.width//2, 10,
-                          pm25_label, monaco16,
-                          epd1in54b.COLORED)
-elif datapoint.pm25 > 25:
-    epd.display_string_at(frame_black,
-                          epd.width//4*3 - len(pm25_label)*monaco16.width//2, 10,
-                          pm25_label, monaco16,
-                          epd1in54b.COLORED)
-    epd.display_string_at(frame_red,
-                          epd.width//4*3 - len(pm25_value)*monaco16.width//2, 30,
-                          pm25_value, monaco16,
-                          epd1in54b.COLORED)
-else:
-    epd.display_string_at(frame_black,
-                          epd.width//4*3 - len(pm25_label)*monaco16.width//2, 10,
-                          pm25_label, monaco16,
-                          epd1in54b.COLORED)
-    epd.display_string_at(frame_black,
-                          epd.width//4*3 - len(pm25_value)*monaco16.width//2, 30,
-                          pm25_value, monaco16,
-                          epd1in54b.COLORED)
+epd.display_string_at(frame_black,
+                      epd.width//4*3 - len(pm25_label)*monaco16.width//2, 25,
+                      pm25_label, monaco16,
+                      epd1in54b.COLORED)
+epd.display_string_at(frame_black,
+                      epd.width//4*3 - len(pm25_value)*menlo24.width//2, 45,
+                      pm25_value, menlo24,
+                      epd1in54b.COLORED)
 
-epd.display_string_at(frame_black, epd.width//2 - len(t_label)*monaco16.width//2, 70, t_label, monaco16, epd1in54b.COLORED)
-epd.display_string_at(frame_black, epd.width//2 - len(t_value)*monaco16.width//2, 90, t_value, monaco16, epd1in54b.COLORED)
-epd.display_string_at(frame_black, epd.width//2 - len(rh_label)*monaco16.width//2, 130, rh_label, monaco16, epd1in54b.COLORED)
-epd.display_string_at(frame_black, epd.width//2 - len(rh_value)*monaco16.width//2, 150, rh_value, monaco16, epd1in54b.COLORED)
+epd.display_string_at(frame_black,
+                      epd.width//4 - len(t_label)*monaco16.width//2, 115,
+                      t_label, monaco16,
+                      epd1in54b.COLORED)
+epd.display_string_at(frame_black,
+                      epd.width//4 - len(t_value)*menlo24.width//2, 135,
+                      t_value, menlo24,
+                      epd1in54b.COLORED)
+
+epd.display_string_at(frame_black,
+                      epd.width//4*3 - len(rh_label)*monaco16.width//2, 115,
+                      rh_label, monaco16,
+                      epd1in54b.COLORED)
+epd.display_string_at(frame_black,
+                      epd.width//4*3 - len(rh_value)*menlo24.width//2, 135,
+                      rh_value, menlo24,
+                      epd1in54b.COLORED)
+
 epd.display_string_at(frame_black, epd.width - 10 - len(battery_value)*monaco12.width, 185, battery_value, monaco12, epd1in54b.COLORED)
-epd.draw_vertical_line(frame_black, epd.width//2, 0, 58, epd1in54b.COLORED)
-epd.draw_horizontal_line(frame_black, 0, 58, epd.width, epd1in54b.COLORED)
-epd.draw_horizontal_line(frame_black, 0, 118, epd.width, epd1in54b.COLORED)
-epd.draw_horizontal_line(frame_black, 0, 178, epd.width, epd1in54b.COLORED)
+epd.draw_vertical_line(frame_black, epd.width//2, 0, 180, epd1in54b.COLORED)
+epd.draw_horizontal_line(frame_black, 0, 90, epd.width, epd1in54b.COLORED)
+epd.draw_horizontal_line(frame_black, 0, 180, epd.width, epd1in54b.COLORED)
 epd.display_frame(frame_black, frame_red)
+
 # sleep for 30 minutes + 2 seconds :)
 tear_down(alive_timer, 1802*1000)
