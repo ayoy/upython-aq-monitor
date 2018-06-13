@@ -10,18 +10,18 @@ from keychain import APP_EUI, APP_KEY
 
 def _connect_to_LoRaWAN(lora):
     # create an ABP authentication params
-    # dev_addr = struct.unpack(">l", binascii.unhexlify(DEVICE_ADDRES))[0]
-    # nwk_swkey = binascii.unhexlify(NETWORK_KEY)
-    # app_swkey = binascii.unhexlify(APP_SESSION_KEY)
+    dev_addr = struct.unpack(">l", binascii.unhexlify(DEVICE_ADDRES))[0]
+    nwk_swkey = binascii.unhexlify(NETWORK_KEY)
+    app_swkey = binascii.unhexlify(APP_SESSION_KEY)
     #
     # # join a network using ABP (Activation By Personalization)
-    # lora.join(activation=LoRa.ABP, auth=(dev_addr, nwk_swkey, app_swkey))
+    lora.join(activation=LoRa.ABP, auth=(dev_addr, nwk_swkey, app_swkey))
 
-    app_eui = binascii.unhexlify(APP_EUI)
-    app_key = binascii.unhexlify(APP_KEY)
+    # app_eui = binascii.unhexlify(APP_EUI)
+    # app_key = binascii.unhexlify(APP_KEY)
     # join a network using OTAA (Over the Air activation)
-    lora.join(activation=LoRa.OTAA, auth=(app_eui, app_key), timeout=0)
-    print('Sending OTAA join...')
+    # lora.join(activation=LoRa.OTAA, auth=(app_eui, app_key), timeout=0)
+    # print('Sending OTAA join...')
 
     # Loop until joined
     while not lora.has_joined():
@@ -30,7 +30,7 @@ def _connect_to_LoRaWAN(lora):
 
 def send_bytes(payload):
     # initialize LoRa in LORAWAN mode.
-    lora = LoRa(mode=LoRa.LORAWAN, region=LoRa.EU868, power_mode=LoRa.TX_ONLY)
+    lora = LoRa(mode=LoRa.LORAWAN, region=LoRa.EU868, adr=True)
     if machine.reset_cause() in [machine.DEEPSLEEP_RESET, machine.SOFT_RESET, machine.WDT_RESET]:
         print('Restoring LoRa state from NVS')
         lora.nvram_restore()

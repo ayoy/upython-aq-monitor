@@ -116,10 +116,15 @@ print('cPM25: {}, cPM10: {}, PM25: {}, PM10: {}, temp: {}, rh: {}, Vbat: {}, tim
 datapoint = DataPoint(timestamp=timestamp, pm10=mean_data.pm10, pm25=mean_data.pm25, temperature=measurements.temperature,
                       humidity=measurements.rel_humidity, voltage=measurements.voltage, duration=time_alive, version=VERSION)
 
-if lora_node.send_bytes(datapoint.to_bytes()):
-    flash_led(0x888888)
-else:
-    flash_led(0x880000)
+def send_data(datapoint):
+    lock.acquire()
+    if lora_node.send_bytes(datapoint.to_bytes()):
+        flash_led(0x888888)
+    else:
+        flash_led(0x880000)
+    lock.release()
+
+_thread.start_new_thread(send_data, (datapoint,))
 
 import epd1in54b
 import monaco12
@@ -194,5 +199,10 @@ epd.draw_horizontal_line(frame_black, 0, 90, epd.width, epd1in54b.COLORED)
 epd.draw_horizontal_line(frame_black, 0, 180, epd.width, epd1in54b.COLORED)
 epd.display_frame(frame_black, frame_red)
 
-# sleep for 30 minutes + 2 seconds :)
-tear_down(alive_timer, 1802*1000)
+if lock.locked():
+    print('waiting for LoRaWAN data transfer')
+    while lock.locked():
+        machine.idle()
+
+# sleep for 60 minutes + 2 seconds :)
+tear_down(alive_timer, 3602*1000)

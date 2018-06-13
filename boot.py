@@ -1,7 +1,7 @@
 import machine
 import pycom
 import persistence
-from network import Bluetooth, WLAN
+from network import Bluetooth, WLAN, LoRa
 from machine import WDT
 from helpers import *
 
@@ -20,6 +20,8 @@ else:
     if machine.reset_cause() not in [machine.DEEPSLEEP_RESET, machine.SOFT_RESET, machine.WDT_RESET]:
         print('hard reset, erasing NVS')
         pycom.nvs_erase_all()
+        lora = LoRa(mode=LoRa.LORAWAN, region=LoRa.EU868)
+        lora.nvram_erase()
         # persistence.cleanup()
     else:
         print('soft/deepsleep reset, enabling watchdog timer')
