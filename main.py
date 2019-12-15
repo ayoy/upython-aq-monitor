@@ -13,6 +13,11 @@ import lora_node
 
 pycom.heartbeat(False)
 
+if machine.reset_cause() not in [machine.DEEPSLEEP_RESET, machine.SOFT_RESET, machine.WDT_RESET]:
+    flash_led(0x008800, n=5)
+    print('init-sleeping for {}ms'.format(600000))
+    machine.deepsleep(600000)
+
 VERSION = '1.0.1'
 
 adc_dht_en = Pin('P3', mode=Pin.OUT, pull=Pin.PULL_DOWN) # MOSFET gate

@@ -4,6 +4,7 @@ import persistence
 from network import Bluetooth, WLAN, LoRa
 from machine import WDT
 from helpers import *
+from utime import sleep_ms
 
 pycom.wifi_on_boot(False)
 
