@@ -5,12 +5,34 @@ import ujson
 from datapoint import DataPoint
 from helpers import *
 
+class Counter:
+    def __init__(self, size):
+        self.size = size
+        self.value = pycom.nvs_get('cnt') or 0
+
+    def increment(self):
+        self.value += 1
+        if self.value >= self.size:
+            self.value = 0
+        pycom.nvs_set('cnt', self.value)
+
+    def store_aq(self, pm10, pm25):
+        pycom.nvs_set('last_pm10', int(pm10))
+        pycom.nvs_set('last_pm25', int(pm25))
+
+    def last_aq(self):
+        return (pycom.nvs_get('last_pm10') or 0, pycom.nvs_get('last_pm25') or 0)
+
+
 __max_queue_size = const(5)
 
 def cleanup():
     try:
         uos.unlink(__filename())
         pycom.nvs_set('queue_size', 0)
+        pycom.nvs_set('cnt', 0)
+        pycom.nvs_set('last_pm10', 0)
+        pycom.nvs_set('last_pm25', 0)
     except OSError as e:
         print('error while removing data file: {}'.format(e.errno))
         pass

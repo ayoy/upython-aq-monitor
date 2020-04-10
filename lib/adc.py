@@ -18,10 +18,10 @@ def vbatt():
         varianceADC += (sample - meanADC)**2
     varianceADC /= (numADCreadings - 1)
     # print("%u ADC readings :\n%s" %(numADCreadings, str(samplesADC)))
-    print("Mean of ADC readings (0-4095) = %15.13f" % meanADC)
-    print("Mean of ADC voltage readings (0-%dmV) = %15.13f" % (apin.value_to_voltage(4095), apin.value_to_voltage(int(meanADC))))
-    print("Variance of ADC readings = %15.13f" % varianceADC)
-    print("10**6*Variance/(Mean**2) of ADC readings = %15.13f" % ((varianceADC*10**6)//(meanADC**2)))
+    # print("Mean of ADC readings (0-4095) = %15.13f" % meanADC)
+    # print("Mean of ADC voltage readings (0-%dmV) = %15.13f" % (apin.value_to_voltage(4095), apin.value_to_voltage(int(meanADC))))
+    # print("Variance of ADC readings = %15.13f" % varianceADC)
+    # print("10**6*Variance/(Mean**2) of ADC readings = %15.13f" % ((varianceADC*10**6)//(meanADC**2)))
     vbatt = (apin.value_to_voltage(int(meanADC)))*147/47
     adc.deinit()
     apin.deinit()

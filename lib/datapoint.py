@@ -26,7 +26,8 @@ class DataPoint:
             self.duration)
 
 
-    def to_bytes(self):
+    def to_bytes(self, aq=True):
+        # type - int - 1b - 0: without AQ, 1: with AQ
         # pm10 [ug/m] - int - 2b
         # pm25 [ug/m] - int - 2b
         # temp [K] - int - 2b
@@ -36,8 +37,10 @@ class DataPoint:
         # version - str
 
         payload = b''
-        payload += int(self.pm10).to_bytes(2, 'little')
-        payload += int(self.pm25).to_bytes(2, 'little')
+        payload += chr(aq)
+        if aq:
+            payload += int(self.pm10).to_bytes(2, 'little')
+            payload += int(self.pm25).to_bytes(2, 'little')
         temp_k = self.temperature + 273.15
         payload += int(temp_k*100).to_bytes(2, 'little')
         payload += int(self.humidity*100).to_bytes(2, 'little')
