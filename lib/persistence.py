@@ -8,7 +8,11 @@ from helpers import *
 class Counter:
     def __init__(self, size):
         self.size = size
-        self.value = pycom.nvs_get('cnt') or 0
+        try:
+            self.value = pycom.nvs_get('cnt') or 0
+        except:
+            pycom.nvs_set('cnt', 0)
+            self.value = 0
 
     def increment(self):
         self.value += 1
@@ -21,7 +25,14 @@ class Counter:
         pycom.nvs_set('last_pm25', int(pm25))
 
     def last_aq(self):
-        return (pycom.nvs_get('last_pm10') or 0, pycom.nvs_get('last_pm25') or 0)
+        try:
+            pm10 = pycom.nvs_get('last_pm10')
+            pm25 = pycom.nvs_get('last_pm25')
+            return (pm10, pm25)
+        except:
+            pycom.nvs_set('last_pm10', 0)
+            pycom.nvs_set('last_pm25', 0)
+            return (0, 0)
 
 
 __max_queue_size = const(5)

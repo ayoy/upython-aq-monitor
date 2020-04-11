@@ -32,7 +32,7 @@ class PMS5003:
     def read_frames(self, count):
         frames = []
         # flush the buffer to read fresh data
-        self.uart.readall()
+        self.uart.read()
         while len(frames) < count:
             self.__wait_for_data(32)
 

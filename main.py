@@ -150,9 +150,7 @@ def send_data(datapoint):
 _thread.start_new_thread(send_data, (datapoint,))
 
 import epd1in54b
-import monaco12
-import monaco16_pms as monaco16
-import menlo24
+import ubuntu44
 
 mosi = Pin('P22')
 clk = Pin('P21')
@@ -171,57 +169,45 @@ frame_red = bytearray(fb_size)
 
 (last_pm10, last_pm25) = counter.last_aq()
 
-pm10_label = "PM10"
-pm25_label = "PM2.5"
-pm10_value = "{}\x80".format(last_pm10)
-pm25_value = "{}\x80".format(last_pm25)
-t_label = "Temp."
-t_value = "%.1f\x81\x82" % datapoint.temperature
-rh_label = "Humidity"
-rh_value = "%d%%" % datapoint.humidity
-battery_value = "battery: %dmV" % datapoint.voltage
+v_min = const(3700)
+v_max = const(4175)
+v_percent = (datapoint.voltage - v_min)/(v_max-v_min) * 100
+v_maxwidth = const(65)
+v_width = int(v_percent * v_maxwidth / 100)
+v_frame = frame_red if (v_percent <= 20) else frame_black
+
+pm10_value = "{:3d}u".format(last_pm10)
+pm25_value = "{:3d}u".format(last_pm25)
+t_value = "{: 2.1f}C".format(datapoint.temperature)
+battery_value = "{:3.0f}%".format(v_percent)
 epd.clear_frame(frame_black, frame_red)
 
+
 epd.display_string_at(frame_black,
-                      epd.width//4 - len(pm10_label)*monaco16.width//2, 25,
-                      pm10_label, monaco16,
-                      epd1in54b.COLORED)
-epd.display_string_at(frame_black,
-                      epd.width//4 - len(pm10_value)*menlo24.width//2, 45,
-                      pm10_value, menlo24,
+                      11, 10,
+                      "PM\" {}".format(pm10_value), ubuntu44,
                       epd1in54b.COLORED)
 
 epd.display_string_at(frame_black,
-                      epd.width//4*3 - len(pm25_label)*monaco16.width//2, 25,
-                      pm25_label, monaco16,
-                      epd1in54b.COLORED)
-epd.display_string_at(frame_black,
-                      epd.width//4*3 - len(pm25_value)*menlo24.width//2, 45,
-                      pm25_value, menlo24,
+                      11, 10 + ubuntu44.height,
+                      "PM# {}".format(pm25_value), ubuntu44,
                       epd1in54b.COLORED)
 
 epd.display_string_at(frame_black,
-                      epd.width//4 - len(t_label)*monaco16.width//2, 115,
-                      t_label, monaco16,
-                      epd1in54b.COLORED)
-epd.display_string_at(frame_black,
-                      epd.width//4 - len(t_value)*menlo24.width//2, 135,
-                      t_value, menlo24,
+                      11, 20 + ubuntu44.height * 2,
+                      "T {}".format(t_value), ubuntu44,
                       epd1in54b.COLORED)
 
 epd.display_string_at(frame_black,
-                      epd.width//4*3 - len(rh_label)*monaco16.width//2, 115,
-                      rh_label, monaco16,
-                      epd1in54b.COLORED)
-epd.display_string_at(frame_black,
-                      epd.width//4*3 - len(rh_value)*menlo24.width//2, 135,
-                      rh_value, menlo24,
+                      11, 199 - 10 - ubuntu44.height,
+                      "    {}".format(battery_value), ubuntu44,
                       epd1in54b.COLORED)
 
-epd.display_string_at(frame_black, epd.width - 10 - len(battery_value)*monaco12.width, 185, battery_value, monaco12, epd1in54b.COLORED)
-epd.draw_vertical_line(frame_black, epd.width//2, 0, 180, epd1in54b.COLORED)
-epd.draw_horizontal_line(frame_black, 0, 90, epd.width, epd1in54b.COLORED)
-epd.draw_horizontal_line(frame_black, 0, 180, epd.width, epd1in54b.COLORED)
+epd.draw_rectangle(frame_black, 11, 153, 84, 182, epd1in54b.COLORED)
+epd.draw_rectangle(frame_black, 12, 154, 83, 181, epd1in54b.COLORED)
+epd.draw_filled_rectangle(frame_black, 86, 160, 89, 176, epd1in54b.COLORED)
+epd.draw_filled_rectangle(v_frame, 15, 157, 15 + v_width, 178, epd1in54b.COLORED)
+
 epd.display_frame(frame_black, frame_red)
 
 if lock.locked():
