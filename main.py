@@ -171,14 +171,14 @@ frame_red = bytearray(fb_size)
 
 v_min = const(3700)
 v_max = const(4175)
-v_percent = (datapoint.voltage - v_min)/(v_max-v_min) * 100
+v_percent = min((datapoint.voltage - v_min)/(v_max-v_min) * 100, 100)
 v_maxwidth = const(65)
 v_width = int(v_percent * v_maxwidth / 100)
 v_frame = frame_red if (v_percent <= 20) else frame_black
 
 pm10_value = "{:3d}u".format(last_pm10)
 pm25_value = "{:3d}u".format(last_pm25)
-t_value = "{: 2.1f}C".format(datapoint.temperature)
+t_value = "{: 5.1f}C".format(datapoint.temperature)
 battery_value = "{:3.0f}%".format(v_percent)
 epd.clear_frame(frame_black, frame_red)
 

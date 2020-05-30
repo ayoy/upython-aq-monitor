@@ -297,7 +297,12 @@ class EPD:
 
 
     def draw_char_at(self, frame_buffer, x, y, char, font, colored):
-        char_offset = (ord(char) - ord(' ')) * font.height * (int(font.width / 8) + (1 if font.width % 8 else 0))
+        try:
+            char_offset = font.lut[ord(char) - ord(' ')]
+        except AttributeError:
+            char_offset = (ord(char) - ord(' ')) * font.height * (int(font.width / 8) + (1 if font.width % 8 else 0))
+            pass
+
         offset = 0
 
         for j in range(font.height):
